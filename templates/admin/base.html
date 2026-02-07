@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Admin Dashboard - One2Talk{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+    <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Stop scroll when modal is open */
+        body.modal-open {
+            overflow: hidden !important;
+        }
+
+        /* Desktop Scrollbar Styling */
+        @media (min-width: 768px) {
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background-color: #cbd5e1;
+                border-radius: 4px;
+            }
+        }
+
+        /* Animation */
+        .animate-fade-in-up {
+            animation: fadeUp 0.2s ease-out forwards;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body class="bg-slate-50 text-slate-900 font-sans flex flex-col md:flex-row md:h-screen md:overflow-hidden">
+    <aside id="sidebar"
+        class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform -translate-x-full transition-transform duration-300 md:translate-x-0 md:relative md:flex md:flex-col shadow-2xl md:shadow-none">
+        <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+            <h1 class="text-xl font-black tracking-wider">ONE2TALK</h1>
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        <nav class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
+            <a href="/admin"
+                class="flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors {% if active_page == 'dashboard' %}bg-slate-800 text-indigo-400 border-l-4 border-indigo-600{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                    </path>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/admin/manage"
+                class="flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors {% if active_page == 'manage' %}bg-slate-800 text-indigo-400 border-l-4 border-indigo-600{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                    </path>
+                </svg>
+                Categories & Cards
+            </a>
+            <a href="/admin/users"
+                class="flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors {% if active_page == 'users' %}bg-slate-800 text-indigo-400 border-l-4 border-indigo-600{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
+                </svg>
+                Users
+            </a>
+            <a href="/admin/settings"
+                class="flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-colors {% if active_page == 'settings' %}bg-slate-800 text-indigo-400 border-l-4 border-indigo-600{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                    </path>
+                </svg>
+                Settings
+            </a>
+        </nav>
+        <div class="p-4 border-t border-slate-800">
+            <button id="logout-btn"
+                class="flex items-center w-full px-4 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
+                </svg>
+                Sign Out
+            </button>
+        </div>
+    </aside>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleSidebar()">
+    </div>
+    <div class="flex-1 flex flex-col min-w-0 md:h-full">
+        <header
+            class="bg-white border-b border-slate-200 p-4 md:hidden flex items-center justify-between sticky top-0 z-30 shadow-sm">
+            <div class="flex items-center">
+                <button onclick="toggleSidebar()" class="text-slate-600 hover:text-slate-900 mr-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <h1 class="text-lg font-black text-slate-900">{% block header_title %}One2Talk{% endblock %}</h1>
+            </div>
+            <button onclick="window.location.reload()" class="p-2 text-slate-400 hover:text-indigo-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                </svg>
+            </button>
+        </header>
+        <main class="flex-1 p-4 md:p-8 md:overflow-y-auto custom-scrollbar relative" id="main-content">
+            <div class="max-w-6xl mx-auto space-y-8 pb-20 md:pb-0">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    <!-- Common Modal -->
+    <div id="common-modal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+        <div
+            class="relative w-full max-w-md bg-white rounded-2xl shadow-xl shadow-slate-200/50 z-10 p-6 border border-slate-100 animate-fade-in-up">
+            <!-- Modal Header -->
+            <h3 id="modal-title" class="text-xl font-black text-slate-900 mb-3"></h3>
+            <div id="modal-content" class="text-slate-500 text-sm leading-relaxed mb-6"></div>
+            <!-- Dynamic Input Container (for passwords etc) -->
+            <div id="modal-input-container" class="mb-6 hidden">
+                <label id="modal-input-label" class="block text-sm font-medium text-slate-700 mb-1.5"></label>
+                <input type="text" id="modal-input"
+                    class="w-full rounded-lg bg-white border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 p-2.5 outline-none transition-all">
+                <p id="modal-error" class="text-red-500 text-xs mt-1.5 hidden"></p>
+            </div>
+            <!-- Modal Actions -->
+            <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
+                <button onclick="closeModal()"
+                    class="px-4 py-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg font-medium transition-colors">Cancel</button>
+                <button id="modal-confirm-btn"
+                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95"></button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            // Toggle translate class
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Lock body on mobile when sidebar open
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = ''; // Unlock
+            }
+        }
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin/login';
+            });
+        }
+    </script>
+    <script src="/static/admin/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

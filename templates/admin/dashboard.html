@@ -1,0 +1,270 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard - Admin Panel{% endblock %}
+{% block header_title %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    .stat-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .progress-track {
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .leader-badge {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.7;
+        }
+    }
+
+    .ranking-card {
+        transition: all 0.2s ease;
+    }
+
+    .ranking-card:hover {
+        background-color: rgb(248 250 252);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Overview -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+    <!-- Total Votes -->
+    <div class="stat-card bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/50">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-slate-500 text-sm font-medium mb-1">Total Votes</p>
+                <p id="stat-total-votes" class="text-3xl font-black text-slate-900">-</p>
+            </div>
+            <div
+                class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Categories -->
+    <div class="stat-card bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/50">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-slate-500 text-sm font-medium mb-1">Categories</p>
+                <p id="stat-total-categories" class="text-3xl font-black text-slate-900">-</p>
+            </div>
+            <div
+                class="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                    </path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Voted -->
+    <div class="stat-card bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/50 sm:col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-slate-500 text-sm font-medium mb-1">Users Voted</p>
+                <p id="stat-total-users" class="text-3xl font-black text-slate-900">-</p>
+            </div>
+            <div
+                class="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                    </path>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Rankings Section -->
+<div class="mb-6">
+    <h2 class="text-xl font-black text-slate-900 mb-2">Vote Rankings by Category</h2>
+    <p class="text-slate-500 text-sm">Real-time voting results with leader indicators</p>
+</div>
+
+<div id="category-rankings" class="space-y-6">
+    <!-- Categories will be loaded here dynamically -->
+    <div class="flex items-center justify-center py-12">
+        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+        </svg>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Token check (uses global token from app.js)
+    if (!token) {
+        window.location.href = '/admin/login';
+    }
+
+    async function loadDashboardStats() {
+        try {
+            const response = await fetchAuth('/api/admin/dashboard-stats');
+            if (!response) return;
+
+            const data = await response.json();
+            renderStats(data);
+        } catch (error) {
+            console.error('Error loading dashboard stats:', error);
+        }
+    }
+
+    function renderStats(data) {
+        // Update stat cards with animation
+        animateNumber('stat-total-votes', data.total_votes);
+        animateNumber('stat-total-categories', data.total_categories);
+        animateNumber('stat-total-users', data.total_users);
+
+        // Render category rankings
+        renderCategoryRankings(data.category_stats);
+    }
+
+    function animateNumber(elementId, targetNumber) {
+        const element = document.getElementById(elementId);
+        const duration = 600;
+        const startTime = performance.now();
+
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const currentNumber = Math.floor(targetNumber * easeOut);
+
+            element.textContent = currentNumber.toLocaleString();
+
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    function renderCategoryRankings(categoryStats) {
+        const container = document.getElementById('category-rankings');
+
+        if (!categoryStats || categoryStats.length === 0) {
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 text-center">
+                    <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">No Categories Yet</h3>
+                    <p class="text-slate-500 mb-4">Create categories and add cards to start receiving votes.</p>
+                    <a href="/admin/manage" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-semibold shadow-lg hover:shadow-indigo-500/30 transition-all">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Create Category
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = categoryStats.map(category => {
+            const hasCards = category.cards && category.cards.length > 0;
+            const leader = hasCards ? category.cards[0] : null;
+
+            return `
+                <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
+                    <!-- Category Header -->
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">${escapeHtml(category.name)}</h3>
+                            <p class="text-slate-500 text-sm">${category.total_votes} total votes</p>
+                        </div>
+                        ${leader && category.total_votes > 0 ? `
+                            <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full">
+                                <span class="leader-badge w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                <span class="text-emerald-700 text-sm font-medium">Leader: ${escapeHtml(leader.title)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- Cards Ranking -->
+                    <div class="divide-y divide-slate-100">
+                        ${hasCards ? category.cards.map((card, index) => {
+                const isLeader = index === 0 && category.total_votes > 0;
+                return `
+                                <div class="ranking-card p-4 md:px-6 flex items-center gap-4">
+                                    <!-- Rank Number -->
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full ${isLeader ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-slate-100 text-slate-600'} flex items-center justify-center font-bold text-sm">
+                                        ${index + 1}
+                                    </div>
+                                    
+                                    <!-- Card Image -->
+                                    <div class="flex-shrink-0">
+                                        <img src="${card.image_url || '/assets/placeholder.png'}" 
+                                             alt="${escapeHtml(card.title)}" 
+                                             class="w-12 h-12 rounded-lg object-cover bg-slate-100 ${isLeader ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}">
+                                    </div>
+                                    
+                                    <!-- Card Info & Progress -->
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <span class="font-semibold text-slate-900 truncate">${escapeHtml(card.title)}</span>
+                                            <span class="text-sm font-medium ${isLeader ? 'text-emerald-600' : 'text-slate-500'}">${card.votes} votes</span>
+                                        </div>
+                                        <!-- Progress Bar -->
+                                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div class="progress-track h-full rounded-full ${isLeader ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-blue-600'}" 
+                                                 style="width: ${card.percentage}%"></div>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mt-1">${card.percentage}%</div>
+                                    </div>
+                                </div>
+                            `;
+            }).join('') : `
+                            <div class="p-6 text-center text-slate-500">
+                                <p>No cards in this category yet</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Auto-refresh every 30 seconds
+    loadDashboardStats();
+    setInterval(loadDashboardStats, 30000);
+</script>
+{% endblock %}

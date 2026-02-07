@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+
+{% block title %}User Management - One2Talk{% endblock %}
+{% block header_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+    <!-- Header / Tools -->
+    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="relative flex-1 max-w-md">
+            <input type="text" id="search-input" placeholder="Search by name, email, or phone..."
+                class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+            <svg class="w-5 h-5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+        </div>
+        <!-- Refresh Button -->
+        <button onclick="loadUsers()" class="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+            title="Refresh">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                </path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr
+                    class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-100">
+                    <th class="px-6 py-4">ID</th>
+                    <th class="px-6 py-4">Name</th>
+                    <th class="px-6 py-4">Phone</th>
+                    <th class="px-6 py-4">Email</th>
+                    <th class="px-6 py-4 text-center">Votes</th>
+                    <th class="px-6 py-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-table-body" class="text-sm text-slate-700 divide-y divide-slate-100">
+                <!-- Dynamic Rows -->
+                <tr>
+                    <td colspan="6" class="px-6 py-8 text-center text-slate-400">Loading users...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="p-4 border-t border-slate-100 flex items-center justify-between" id="pagination-controls">
+        <!-- Rendered by JS -->
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="fixed inset-0 z-50 hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+
+    <!-- Modal Content -->
+    <div
+        class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-xl shadow-2xl p-6 border border-slate-100 animate-fade-in-up">
+        <h3 class="text-lg font-bold text-slate-900 mb-2">Confirm User Deletion</h3>
+        <p class="text-slate-500 mb-6">Are you sure you want to delete <span id="delete-user-name"
+                class="font-bold text-slate-700">this user</span>? This will also remove all their votes. This action
+            cannot be undone.</p>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Admin Password</label>
+            <input type="password" id="delete-password"
+                class="w-full rounded-lg border-slate-200 focus:ring-2 focus:ring-red-500 p-2.5 border"
+                placeholder="Enter your password to confirm">
+            <p id="delete-error" class="text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <button onclick="closeDeleteModal()"
+                class="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium">Cancel</button>
+            <button onclick="confirmDeleteUser()"
+                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-lg shadow-red-500/30 transition-all">Delete
+                User</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- app.js is loaded in base.html -->
+{% endblock %}

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One2Talk</title>
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/assets/images/favicon/site.webmanifest">
+    <link rel="shortcut icon" href="/assets/images/favicon/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Anek+Malayalam:wdth,wght@87.5,100..800&family=Inter:opsz,wght@14..32,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"
+        integrity="sha512-1cK78a1o+ht2JcaW6g8OXYwqpev9+6GqOkz9xmBN9iUUhIndKtxwILGWYOSibOKjLsEdjyjZvYDq/cZwNeak0w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+
+<body>
+    <header>
+
+        <div class="container">
+            <div class="nav">
+                <div class="nav-logo">
+                    <img src="./assets/images/main-logo.svg" alt="logo">
+                </div>
+                <p class="nav-text" data-aos="fade-down" data-aos-duration="800">STAR & SUCCESS AWARD 2025</p>
+                <a href="#vote-now"><button class="nav-btn">Vote Now</button></a>
+            </div>
+        </div>
+    </header>
+    <main>
+
+        <section class="banner">
+            <div class="container">
+                <div class="banner-wrapper">
+                    <div class="banner-text">
+                        <p class="sm-banner-title split-text">One 2 Talk</p>
+                        <h1 class="fs-h1 banner-title split-text">STAR & SUCCESS AWARD 2025</h1>
+                        <a href="#vote-now"><button class="banner-btn">Vote Now</button></a>
+                    </div>
+                    <img class="desktop-banner" src="./assets/images/Banner-large-d - Copy.png" alt="banner-img"
+                        data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+                    <img class="mobile-banner" src="./assets/images/Banner-large-d.png" alt="banner-img"
+                        data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+                </div>
+
+            </div>
+        </section>
+        <section class="banner-footer-section">
+            <div class="container">
+                <div class="banner-footer">
+                    <div class="banner-footer-text" data-aos="fade-up" data-aos-duration="600">
+                        Experience the next
+                    </div>
+                    <div class="banner-footer-logo" data-aos="fade-up" data-aos-duration="600" data-aos-delay="100">
+                        <img src="./assets/images/my-G-LOGO.png" alt="">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pool-section" id="vote-now">
+            <!-- Categories will be dynamically rendered from JSON -->
+            <div id="categories-container"></div>
+        </section>
+
+
+        <section class="form-section" id="contact-form-section">
+            <div class="container">
+                <div class="form-wrapper">
+                    <div class="form-bg">
+                        <img src="./assets/images/form-sec.png" alt="Award Trophy" class="trophy-img">
+                    </div>
+                    <div class="form-content">
+                        <form action="" class="contact-form" id="contact-form">
+                            <div class="form-group">
+                                <input type="text" id="name" placeholder=" " required maxlength="50">
+                                <label for="name">Name*</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="tel" id="phone" placeholder=" " required pattern="[0-9]{10,15}"
+                                    minlength="10" maxlength="15">
+                                <label for="phone">Phone Number*</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="email" placeholder=" " required>
+                                <label for="email">Email ID*</label>
+                            </div>
+                            <button type="submit" class="form-submit-btn">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Success Popup -->
+        <div class="success-popup" id="success-popup">
+            <div class="popup-backdrop"></div>
+            <div class="popup-content">
+                <div class="popup-icon">
+                    <svg id="popup-success-icon" class="checkmark" xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 52 52">
+                        <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none" />
+                        <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                    </svg>
+                    <!-- Error Icon -->
+                    <svg id="popup-error-icon" class="checkmark error-icon hidden" xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 52 52">
+                        <circle class="checkmark__circle error" cx="26" cy="26" r="25" fill="none" />
+                        <path class="checkmark__check" fill="none" d="M16 16 36 36 M36 16 16 36" />
+                    </svg>
+                </div>
+                <h3 id="popup-title">Congratulations!</h3>
+                <p id="popup-message">Your submission has been received successfully.</p>
+                <button class="popup-close-btn" onclick="closePopup()">Continue</button>
+            </div>
+        </div>
+
+    </main>
+    <footer>
+        <div class="container">
+            <div class="footer-wrapper">
+                <div class="footer-logo">
+                    <img src="./assets/images/main-logo.svg" alt="">
+                </div>
+                <div class="footer-links">
+                    <div class="social-links" data-aos="fade-up" data-aos-duration="600">
+                        <a href="#" data-aos="fade-up" data-aos-duration="600" data-aos-delay="100">
+                            <svg class="icon" viewBox="0 0 34 33" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M17 0C7.6 0 0 7.4 0 16.5c0 7.7 5.5 14.2 13 16V21.5H9.4v-5h3.5v-2.2c0-5.6 2.6-8.2 8.3-8.2 1 0 2.9.2 3.7.4v4.6h-2c-2.8 0-3.9 1-3.9 3.7v1.8h5.5l-1 5H19v11.4C27.5 31.9 34 25 34 16.5 34 7.4 26.4 0 17 0Z" />
+                            </svg>
+                            facebook
+                        </a>
+
+                        <a href="#" data-aos="fade-up" data-aos-duration="600" data-aos-delay="300">
+                            <svg class="icon" viewBox="0 0 34 33" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M17 3c4.5 0 5 .02 6.9.1 1.7.07 2.6.34 3.2.56.8.3 1.4.66 2 1.23.6.58 1 1.13 1.2 1.9.24.6.5 1.46.6 3.06.08 1.74.1 2.26.1 6.66s-.02 4.9-.1 6.64c-.07 1.6-.35 2.47-.58 3.05-.3.77-.68 1.32-1.27 1.9-.6.58-1.15.93-1.94 1.23-.6.22-1.5.5-3.16.57-1.8.07-2.33.1-6.86.1s-5.08-.02-6.87-.1c-1.66-.07-2.56-.34-3.16-.57-.8-.3-1.36-.65-1.95-1.23-.6-.58-1-.13-1.26-1.9-.23-.58-.5-1.46-.58-3.06C3.1 21.4 3.07 20.9 3.07 16.5c0-4.4.02-4.93.1-6.66.07-1.6.35-2.48.58-3.06.3-.77.68-1.32 1.27-1.9.6-.58 1.15-.93 1.94-1.23.6-.22 1.5-.5 3.16-.57C11.9 3 12.46 3 17 3Zm0-3C12.4 0 11.8 0 10 .1 8.2.17 7 .46 5.9.86 4.75 1.3 3.8 1.85 2.86 2.77c-.95.9-1.53 1.83-1.97 2.9C.47 6.75.18 7.94.1 9.7 0 11.46 0 12 0 16.5s0 5 .1 6.8c.08 1.75.37 2.96.8 4 1.2 2.75 2.75 4.3 5.5 5.5 1.1.4 2.3.7 4 .8 1.8.08 2.4.1 7 .1 4.6 0 5.2-.02 7-.1 1.8-.08 3-.36 4.1-.77 1.1-.4 2.06-.97 3-1.9.94-.9 1.52-1.8 1.95-2.9.42-1.05.7-2.25.8-4 .08-1.76.1-2.32.1-6.8 0-4.48-.02-5.04-.1-6.8-.08-1.75-.37-2.96-.8-4-.4-1.1-1-2-1.93-2.93-.94-.9-1.9-1.48-3-1.9C27.05.46 25.8.18 24 .1 22.2 0 21.6 0 17 0Z" />
+                                <path
+                                    d="M17 8c-4.8 0-8.7 3.8-8.7 8.5 0 4.68 3.9 8.48 8.7 8.48 4.82 0 8.73-3.8 8.73-8.48S21.82 8 17 8Zm0 14c-3.13 0-5.66-2.46-5.66-5.5C11.34 13.46 13.87 11 17 11c3.13 0 5.66 2.46 5.66 5.5 0 3.04-2.54 5.5-5.66 5.5Z" />
+                                <path
+                                    d="M28.1 7.7c0 1.1-.9 2-2 2-1.13 0-2.04-.9-2.04-2 0-1.1.9-1.98 2.04-1.98 1.1 0 2 .9 2 2Z" />
+                            </svg>
+                            instagram
+                        </a>
+
+                        <a href="#" data-aos="fade-up" data-aos-duration="600" data-aos-delay="500">
+                            <svg class="icon" viewBox="0 0 33 33" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M32.67 9.9c0 0-.32-2.28-1.3-3.28C30.1 5.3 28.7 5.3 28 5.23 23.44 4.9 16.5 4.9 16.5 4.9s-6.93 0-11.55.33C4.3 5.3 2.9 5.3 1.64 6.62.65 7.62.34 9.9.34 9.9s-.34 2.67-.34 5.34v2.5c0 2.67.33 5.34.33 5.34s.32 2.28 1.3 3.28c1.26 1.3 2.9 1.26 3.64 1.4 2.64.25 11.22.33 11.22.33s6.94-.02 11.55-.34c.65-.08 2.05-.08 3.3-1.4 1-.98 1.32-3.26 1.32-3.26s.33-2.66.33-5.34v-2.5c0-2.67-.33-5.34-.33-5.34ZM13.1 20.78v-9.28l8.9 4.66-8.9 4.62Z" />
+                            </svg>
+                            youtube
+                        </a>
+                    </div>
+                    <div class="divider" data-aos="fade-up" data-aos-duration="600" data-aos-delay="200"></div>
+                    <div class="other-links" data-aos="fade-up" data-aos-duration="600" data-aos-delay="300">
+                        <a href="#">Terms & Conditions</a><a href="#">Privacy Policy</a>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <img class="footer-bg-img" src="./assets/images/ONE2TALKS.svg" alt="">
+    </footer>
+
+    <!-- Lenis Smooth Scroll -->
+    <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+    <!-- AOS Animation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"
+        integrity="sha512-A7AYk1fGKX6S2SsHywmPkrnzTZHrgiVT7GcQkLGDe2ev0aWb8zejytzS8wjo7PGEXKqJOrjQ4oORtnimIRZBtw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="./assets/js/main.js?v=2.3"></script>
+</body>
+
+</html>
