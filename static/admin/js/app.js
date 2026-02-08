@@ -409,26 +409,30 @@ function renderManagement(container, categories, categoryStats) {
         let cardsPreview = '';
         if (catStats && catStats.cards.length > 0) {
             // Added ID for SortableJS targeting
-            cardsPreview = `<div id="card-grid-${cat.id}" data-cat-id="${cat.id}" class="card-sortable mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">`;
+            cardsPreview = `<div id="card-grid-${cat.id}" data-cat-id="${cat.id}" class="card-sortable mt-6 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">`;
             catStats.cards.forEach(card => {
                 const fullCard = cat.cards.find(c => c.id === card.id) || card; // ensure image_url exists
                 cardsPreview += `
                     <div data-id="${fullCard.id}" class="group relative bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all flex flex-col overflow-hidden">
                         <div class="relative w-full bg-slate-100" style="aspect-ratio: 269/268;">
                             <img src="${fullCard.image_url || '/static/placeholder.png'}" class="absolute inset-0 w-full h-full object-cover">
-                            <div class="absolute top-2 right-2 flex space-x-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                <button onclick="openEditCardModal('${fullCard.id}', '${fullCard.title.replace(/'/g, "\\'")}', '${(fullCard.subtitle || '').replace(/'/g, "\\'")}', '${fullCard.image_url || ''}')" 
-                                    class="p-2 bg-white/90 backdrop-blur-sm text-slate-500 hover:text-indigo-600 rounded-lg shadow-sm hover:shadow transition-colors" title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                </button>
-                                <button onclick="deleteCard('${fullCard.id}')" 
-                                    class="p-2 bg-white/90 backdrop-blur-sm text-slate-500 hover:text-red-600 rounded-lg shadow-sm hover:shadow transition-colors" title="Delete">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
+                            <!-- Floating Tab Badge Menu -->
+                            <div class="absolute -top-0 -right-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                <div class="flex bg-white/95 backdrop-blur-sm rounded-bl-xl shadow-lg border-l border-b border-slate-200 overflow-hidden">
+                                    <button onclick="openEditCardModal('${fullCard.id}', '${fullCard.title.replace(/'/g, "\\'")}', '${(fullCard.subtitle || '').replace(/'/g, "\\'")}', '${fullCard.image_url || ''}')" 
+                                        class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="Edit">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                    <div class="w-px bg-slate-200"></div>
+                                    <button onclick="deleteCard('${fullCard.id}')" 
+                                        class="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors" title="Delete">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div class="p-4 flex flex-col flex-grow">
-                             <h4 class="text-base font-bold text-slate-900 leading-tight mb-1 truncate" title="${fullCard.title}">${fullCard.title}</h4>
+                        <div class="p-3 flex flex-col flex-grow">
+                             <h4 class="text-sm font-bold text-slate-900 leading-tight mb-0.5 truncate" title="${fullCard.title}">${fullCard.title}</h4>
                              ${fullCard.subtitle ? `<p class="text-xs text-slate-500 truncate" title="${fullCard.subtitle}">${fullCard.subtitle}</p>` : '<p class="text-xs text-slate-300 italic">No subtitle</p>'}
                         </div>
                     </div>
@@ -445,7 +449,7 @@ function renderManagement(container, categories, categoryStats) {
         }
 
         const uiCard = document.createElement('div');
-        uiCard.className = 'bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6';
+        uiCard.className = 'rounded-xl overflow-visible mb-6';
         uiCard.dataset.id = cat.id;
 
         // Apply open/closed state
@@ -453,54 +457,94 @@ function renderManagement(container, categories, categoryStats) {
         const chevronRotation = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
         const headerHover = isOpen ? 'text-indigo-700' : 'text-slate-900';
 
-        uiCard.innerHTML = `
-            <div class="p-3 md:p-6">
-                <!-- Header -->
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 md:gap-3 group cursor-pointer flex-grow min-w-0" onclick="toggleAccordion('cat-content-${cat.id}', 'cat-chevron-${cat.id}')">
-                        <div class="drag-handle p-1.5 md:p-2 text-slate-300 hover:text-slate-600 cursor-move hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0" onclick="event.stopPropagation()">
-                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
-                        </div>
-                        <div class="p-1.5 md:p-2 bg-slate-50 rounded-lg group-hover:bg-slate-100 transition-colors flex-shrink-0">
-                            <svg id="cat-chevron-${cat.id}" class="w-4 h-4 md:w-5 md:h-5 text-slate-400 transform transition-transform duration-300" 
-                                 style="transform: ${chevronRotation}" 
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                        <div class="min-w-0 flex-grow">
-                            <h3 class="text-base md:text-lg font-bold group-hover:text-indigo-700 transition-colors select-none truncate ${headerHover}">${cat.name}</h3>
-                            <p class="text-xs text-slate-500 font-medium select-none truncate">${cardCount} Cards</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Actions -->
-                    <div class="flex items-center gap-1 md:gap-2 ml-2 flex-shrink-0">
-                        <button onclick="toggleReorder('${cat.id}')" id="reorder-btn-${cat.id}" class="p-1.5 md:p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors" title="Toggle Reorder">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
-                        </button>
-                        <button onclick="openEditCategoryModal('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')" class="p-1.5 md:p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors" title="Edit">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-                        <button onclick="deleteCategory('${cat.id}')" class="p-1.5 md:p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                        <div class="h-5 md:h-6 w-px bg-slate-200 mx-1 md:mx-2"></div>
-                         <button onclick="openCardModal('${cat.id}')" class="hidden sm:inline-flex items-center px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors border border-indigo-100">
-                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                            Add
-                        </button>
-                         <button onclick="openCardModal('${cat.id}')" class="sm:hidden p-1.5 md:p-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        </button>
-                    </div>
-                </div>
+        const catName = cat.name.replace(/'/g, "\\'");
 
-                <div id="cat-content-${cat.id}" class="grid transition-[grid-template-rows] duration-300 ease-out ${gridState}">
-                    <div class="overflow-hidden">
-                        ${cardsPreview}
+        uiCard.innerHTML = `
+    <!-- Floating Tab Badge Menu - Right Aligned & Integrated -->
+    <div class="flex justify-end relative">
+        <div class="flex bg-white rounded-t-xl overflow-hidden border-x border-t border-slate-200">
+            <button onclick="toggleReorder('${cat.id}')" id="reorder-btn-${cat.id}" 
+                class="px-4 py-2.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200 text-sm font-medium flex items-center gap-2 border-r border-slate-200 group" 
+                title="Reorder Cards">
+                <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                </svg>
+                <span class="hidden sm:inline">Reorder</span>
+            </button>
+            
+            <button onclick="openEditCategoryModal('${cat.id}', '${catName}')" 
+                class="px-4 py-2.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 transition-all duration-200 text-sm font-medium flex items-center gap-2 border-r border-slate-200 group" 
+                title="Edit Category">
+                <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                <span class="hidden sm:inline">Edit</span>
+            </button>
+            
+            <button onclick="deleteCategory('${cat.id}')" 
+                class="px-4 py-2.5 text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 text-sm font-medium flex items-center gap-2 border-r border-slate-200 group" 
+                title="Delete Category">
+                <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <span class="hidden sm:inline">Delete</span>
+            </button>
+            
+            <button onclick="openCardModal('${cat.id}')" 
+                class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 transition-all duration-200 text-sm font-semibold flex items-center gap-2 group" 
+                title="Add Card">
+                <svg class="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span class="hidden sm:inline">Add Card</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Card Content - Seamlessly Connected -->
+    <div class="bg-white rounded-xl rounded-tr-none border border-slate-200">
+        <div class="p-4 md:p-6">
+            <!-- Header -->
+            <div class="flex items-center">
+                <div class="flex items-center gap-3 group cursor-pointer flex-grow min-w-0" 
+                    onclick="toggleAccordion('cat-content-${cat.id}', 'cat-chevron-${cat.id}')">
+                    <div class="drag-handle p-2 text-slate-400 hover:text-slate-700 cursor-move hover:bg-slate-50 rounded-lg transition-all duration-200 flex-shrink-0" 
+                        onclick="event.stopPropagation()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                        </svg>
+                    </div>
+                    <div class="p-2 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg group-hover:from-indigo-100 group-hover:to-purple-100 transition-all duration-200 flex-shrink-0">
+                        <svg id="cat-chevron-${cat.id}" 
+                            class="w-5 h-5 text-indigo-600 transform transition-transform duration-300"
+                            style="transform: ${chevronRotation}"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div class="min-w-0 flex-grow">
+                        <h3 class="text-lg md:text-xl font-bold text-slate-800 group-hover:text-indigo-700 transition-colors select-none truncate">${cat.name}</h3>
+                        <p class="text-xs text-slate-500 font-medium select-none truncate mt-0.5">
+                            <span class="inline-flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                ${cardCount} Cards
+                            </span>
+                        </p>
                     </div>
                 </div>
             </div>
-        `;
+
+            <!-- Accordion Content -->
+            <div id="cat-content-${cat.id}" class="grid transition-[grid-template-rows] duration-300 ease-out ${gridState}">
+                <div class="overflow-hidden">
+                    ${cardsPreview}
+                </div>
+            </div>
+        </div>
+    </div>
+`;
         container.appendChild(uiCard);
     });
 
@@ -516,7 +560,7 @@ function renderManagement(container, categories, categoryStats) {
                     if (child.dataset.id) order.push(parseInt(child.dataset.id));
                 });
                 // Reorder API call
-                fetchAuth(`${API_BASE}/categories/reorder`, {
+                fetchAuth(`${API_BASE} /categories/reorder`, {
                     method: 'PUT',
                     body: JSON.stringify({ items: order })
                 }).catch(err => console.error('Reorder failed', err));
@@ -539,7 +583,7 @@ function renderManagement(container, categories, categoryStats) {
                     });
 
                     // Reorder API call
-                    fetchAuth(`${API_BASE}/cards/reorder`, {
+                    fetchAuth(`${API_BASE} /cards/reorder`, {
                         method: 'PUT',
                         body: JSON.stringify({ items: order })
                     }).catch(err => console.error('Card reorder failed', err));

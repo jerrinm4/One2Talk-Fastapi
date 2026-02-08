@@ -73,12 +73,12 @@
     {% block head %}{% endblock %}
 </head>
 
-<body class="bg-slate-50 text-slate-900 font-sans flex flex-col md:flex-row md:h-screen md:overflow-hidden">
+<body class="bg-slate-50 text-slate-900 font-sans flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden">
     <aside id="sidebar"
-        class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform -translate-x-full transition-transform duration-300 md:translate-x-0 md:relative md:flex md:flex-col shadow-2xl md:shadow-none">
+        class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform -translate-x-full transition-transform duration-300 lg:translate-x-0 lg:relative lg:flex lg:flex-col shadow-2xl lg:shadow-none">
         <div class="p-6 border-b border-slate-800 flex items-center justify-between">
             <h1 class="text-xl font-black tracking-wider">ONE2TALK</h1>
-            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+            <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-white">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                     </path>
@@ -147,11 +147,11 @@
             </button>
         </div>
     </aside>
-    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleSidebar()">
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden" onclick="toggleSidebar()">
     </div>
-    <div class="flex-1 flex flex-col min-w-0 md:h-full">
+    <div class="flex-1 flex flex-col min-w-0 lg:h-full">
         <header
-            class="bg-white border-b border-slate-200 p-4 md:hidden flex items-center justify-between sticky top-0 z-30 shadow-sm">
+            class="bg-white border-b border-slate-200 p-4 lg:hidden flex items-center justify-between sticky top-0 z-30 shadow-sm">
             <div class="flex items-center">
                 <button onclick="toggleSidebar()" class="text-slate-600 hover:text-slate-900 mr-4">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,8 +169,8 @@
                 </svg>
             </button>
         </header>
-        <main class="flex-1 p-4 md:p-8 md:overflow-y-auto custom-scrollbar relative" id="main-content">
-            <div class="max-w-6xl mx-auto space-y-8 pb-20 md:pb-0">
+        <main class="flex-1 p-4 lg:p-8 lg:overflow-y-auto custom-scrollbar relative" id="main-content">
+            <div class="max-w-6xl mx-auto space-y-8 pb-20 lg:pb-0">
                 {% block content %}{% endblock %}
             </div>
         </main>
