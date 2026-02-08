@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
@@ -32,6 +33,7 @@ def invalidate_dashboard_cache():
 @router.post("/token", response_model=schemas.Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(Admin).filter(Admin.username == form_data.username).first()
+    
     if not user or not auth.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -508,3 +510,4 @@ def delete_admin(
     db.commit()
     
     return {"message": f"Admin '{admin.username}' deleted successfully"}
+

@@ -4,12 +4,49 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from routers import admin, user
-from database import engine, Base
+from database import engine, Base, SessionLocal
+from models import Admin
+import auth
 
 # Create Tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Create default admin user on startup
+@app.on_event("startup")
+def create_default_admin():
+    import os
+    import bcrypt
+    
+    db = SessionLocal()
+    try:
+        # Read credentials from environment
+        default_username = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
+        default_password = os.getenv("DEFAULT_ADMIN_PASSWORD", "12345678")
+        
+        # Check if admin user exists
+        existing_admin = db.query(Admin).filter(Admin.username == default_username).first()
+        if not existing_admin:
+            # Hash password using bcrypt directly (avoids passlib init issues)
+            password_bytes = default_password.encode('utf-8')
+            salt = bcrypt.gensalt()
+            hashed = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+            
+            default_admin = Admin(
+                username=default_username,
+                password_hash=hashed,
+                role="admin"
+            )
+            db.add(default_admin)
+            db.commit()
+            print(f"✅ Default admin created (username: {default_username})")
+        else:
+            print(f"ℹ️ Admin '{default_username}' already exists, skipping")
+    except Exception as e:
+        print(f"⚠️ Admin creation skipped: {e}")
+    finally:
+        db.close()
 
 templates = Jinja2Templates(directory="templates")
 

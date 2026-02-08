@@ -74,7 +74,6 @@ def backup_database_json(db, backup_path: Path):
         'categories': Category,
         'cards': Card,
         'votes': Vote,
-        'admins': Admin,
         'settings': Settings
     }
     
@@ -108,11 +107,18 @@ def backup_images(backup_path: Path):
     images_backup_path.mkdir(exist_ok=True)
     
     for file in UPLOADS_DIR.iterdir():
-        if file.is_file():
-            shutil.copy2(file, images_backup_path / file.name)
-            image_count += 1
+        try:
+            if file.is_file():
+                shutil.copy2(file, images_backup_path / file.name)
+                image_count += 1
+            elif file.is_dir():
+                # Recursively copy subdirectories if any
+                shutil.copytree(file, images_backup_path / file.name)
+                image_count += 1
+        except Exception as e:
+            print(f"  ⚠ Failed to copy {file.name}: {e}")
     
-    print(f"  ✓ Copied {image_count} images")
+    print(f"  ✓ Copied {image_count} items")
     return images_backup_path
 
 
@@ -133,41 +139,129 @@ def create_backup_zip(backup_path: Path, timestamp: str):
     return zip_path
 
 
-def full_backup():
+def full_backup(silent=False):
     """Perform a full backup of database and images."""
-    print("\n📦 Starting Full Backup...")
-    print("-" * 40)
+    if not silent:
+        print("\n📦 Starting Full Backup...")
+        print("-" * 40)
     
     timestamp = get_timestamp()
     backup_path = ensure_backup_dir() / f"backup_{timestamp}"
     backup_path.mkdir(exist_ok=True)
     
+    zip_path = None
+    
     db = SessionLocal()
     try:
         # Backup database
-        print("\n🗄️  Backing up database...")
+        if not silent:
+            print("\n🗄️  Backing up database...")
         backup_database_json(db, backup_path)
         
         # Backup images
-        print("\n🖼️  Backing up images...")
+        if not silent:
+            print("\n🖼️  Backing up images...")
         backup_images(backup_path)
         
         # Create ZIP archive
-        print("\n📦 Creating compressed archive...")
+        if not silent:
+            print("\n📦 Creating compressed archive...")
         zip_path = create_backup_zip(backup_path, timestamp)
         
         size_mb = zip_path.stat().st_size / (1024 * 1024)
-        print(f"\n✅ Backup completed successfully!")
-        print(f"   📁 File: {zip_path.name}")
-        print(f"   📊 Size: {size_mb:.2f} MB")
-        print(f"   📍 Location: {zip_path}")
+        print(f"[{datetime.now()}] ✅ Backup completed: {zip_path.name} ({size_mb:.2f} MB)")
         
     except Exception as e:
-        print(f"\n❌ Backup failed: {e}")
+        print(f"[{datetime.now()}] ❌ Backup failed: {e}")
+        # Build failed, ensure we don't return partial state if possible, or re-raise
+        if silent:
+            raise e
+            
     finally:
         db.close()
     
-    input("\nPress Enter to continue...")
+    if not silent:
+        input("\nPress Enter to continue...")
+
+    return zip_path
+
+
+def restore_from_zip_file(zip_path: Path):
+    """Restore database from a specific ZIP backup file (Non-interactive)."""
+    if not zip_path.exists():
+        raise FileNotFoundError(f"Backup file not found: {zip_path}")
+
+    print(f"[{datetime.now()}] 🔄 Starting restore from {zip_path.name}...")
+    
+    temp_dir = BACKUP_DIR / f"temp_restore_{get_timestamp()}"
+    temp_dir.mkdir(exist_ok=True)
+    
+    db = SessionLocal()
+    try:
+        # Extract ZIP
+        with zipfile.ZipFile(zip_path, 'r') as zipf:
+            zipf.extractall(temp_dir)
+        
+        json_file = temp_dir / "database.json"
+        uploads_dir = temp_dir / "uploads"
+        
+        if not json_file.exists():
+            raise FileNotFoundError("Invalid backup: database.json not found inside archive")
+
+        # Load JSON data
+        with open(json_file, 'r', encoding='utf-8') as f:
+            backup_data = json.load(f)
+        
+        # Restore each table
+        model_map = {
+            'settings': Settings,
+            'users': User,
+            'categories': Category,
+            'cards': Card,
+            'votes': Vote,
+        }
+        
+        for table_name, model_class in model_map.items():
+            if table_name in backup_data and table_name != '_metadata':
+                # Clear existing data
+                db.query(model_class).delete()
+                
+                # Insert backup data
+                for row_data in backup_data[table_name]:
+                    # Remove auto-generated datetime fields
+                    row_copy = row_data.copy()
+                    if 'created_at' in row_copy:
+                        del row_copy['created_at']
+                    if 'updated_at' in row_copy:
+                        del row_copy['updated_at']
+                    
+                    obj = model_class(**row_copy)
+                    db.add(obj)
+                
+                print(f"  ✓ {table_name}: {len(backup_data[table_name])} records restored")
+        
+        db.commit()
+        
+        # Restore images if available
+        if uploads_dir and uploads_dir.exists():
+            print("  🖼️  Restoring images...")
+            for file in uploads_dir.iterdir():
+                if file.is_file():
+                    shutil.copy2(file, UPLOADS_DIR / file.name)
+            print(f"  ✓ Images restored")
+        
+        print(f"[{datetime.now()}] ✅ Restore completed successfully")
+        return True
+
+    except Exception as e:
+        db.rollback()
+        print(f"[{datetime.now()}] ❌ Restore failed: {e}")
+        raise e
+    finally:
+        db.close()
+        # Cleanup temp directory
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def database_only_backup():

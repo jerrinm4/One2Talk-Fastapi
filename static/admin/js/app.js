@@ -792,6 +792,7 @@ let activePreviewContainerId = null;
 // Helper to init cropper on file change
 function setupCropper(fileInputId, previewId, containerId) {
     const input = document.getElementById(fileInputId);
+    if (!input) return;
     input.addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (file) {
