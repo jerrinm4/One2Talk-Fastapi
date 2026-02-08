@@ -491,7 +491,7 @@ function renderManagement(container, categories, categoryStats) {
             </button>
             
             <button onclick="openCardModal('${cat.id}')" 
-                class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 transition-all duration-200 text-sm font-semibold flex items-center gap-2 group" 
+                class="px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-all duration-200 text-sm font-semibold flex items-center gap-2 group" 
                 title="Add Card">
                 <svg class="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
