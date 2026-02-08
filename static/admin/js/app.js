@@ -619,8 +619,19 @@ window.closeCategoryModal = () => { document.getElementById('category-modal').cl
 window.submitCategory = async () => {
     const name = document.getElementById('new-cat-name').value;
     if (!name) return;
-    const res = await fetchAuth(`${API_BASE}/categories`, { method: 'POST', body: JSON.stringify({ name }) });
-    if (res.ok) { closeCategoryModal(); loadManageData(); document.getElementById('new-cat-name').value = ''; }
+    try {
+        const res = await fetchAuth(`${API_BASE}/categories`, { method: 'POST', body: JSON.stringify({ name }) });
+        if (res.ok) {
+            closeCategoryModal();
+            loadManageData();
+            document.getElementById('new-cat-name').value = '';
+        } else {
+            const err = await res.json();
+            await showAlert(err.detail || 'Failed to create category', 'Creation Error');
+        }
+    } catch (e) {
+        console.error(e);
+    }
 };
 
 window.openCardModal = (catId) => {

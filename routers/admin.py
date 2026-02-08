@@ -106,6 +106,10 @@ def get_dashboard_stats(current_user: Admin = Depends(get_current_admin_user), d
 # Category Management (Full Admin Only)
 @router.post("/categories", response_model=schemas.Category)
 def create_category(category: schemas.CategoryCreate, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
+    existing_category = db.query(Category).filter(Category.name == category.name).first()
+    if existing_category:
+        raise HTTPException(status_code=400, detail="Category with this name already exists")
+
     db_category = Category(name=category.name)
     db.add(db_category)
     db.commit()
