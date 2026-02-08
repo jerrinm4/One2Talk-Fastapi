@@ -7,9 +7,9 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Admin
+from config import SECRET_KEY
 
-# SECRET_KEY should be in env file in production
-SECRET_KEY = "supersecretkeyone2talk"
+# JWT Configuration
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
