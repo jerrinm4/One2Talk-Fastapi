@@ -362,11 +362,22 @@ async function loadManageData() {
 }
 
 function renderManagement(container, categories, categoryStats) {
+    // 1. Capture current state (which categories are open)
+    const openCategories = new Set();
+    const existingCards = container.querySelectorAll('[id^="cat-content-"]');
+    existingCards.forEach(el => {
+        if (el.classList.contains('grid-rows-[1fr]')) {
+            const id = el.id.replace('cat-content-', '');
+            openCategories.add(parseInt(id)); // Assuming ID is int or matches loose equality
+        }
+    });
+
     container.innerHTML = '';
 
     categories.forEach(cat => {
         const catStats = categoryStats.find(c => c.id === cat.id);
         const cardCount = catStats ? catStats.cards.length : 0;
+        const isOpen = openCategories.has(cat.id); // Check if previously open
 
         // Cards Grid
         let cardsPreview = '';
@@ -409,6 +420,12 @@ function renderManagement(container, categories, categoryStats) {
         const uiCard = document.createElement('div');
         uiCard.className = 'bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6';
         uiCard.dataset.id = cat.id;
+
+        // Apply open/closed state
+        const gridState = isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]';
+        const chevronRotation = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        const headerHover = isOpen ? 'text-indigo-700' : 'text-slate-900';
+
         uiCard.innerHTML = `
             <div class="p-3 md:p-6">
                 <!-- Header -->
@@ -418,10 +435,12 @@ function renderManagement(container, categories, categoryStats) {
                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
                         </div>
                         <div class="p-1.5 md:p-2 bg-slate-50 rounded-lg group-hover:bg-slate-100 transition-colors flex-shrink-0">
-                            <svg id="cat-chevron-${cat.id}" class="w-4 h-4 md:w-5 md:h-5 text-slate-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <svg id="cat-chevron-${cat.id}" class="w-4 h-4 md:w-5 md:h-5 text-slate-400 transform transition-transform duration-300" 
+                                 style="transform: ${chevronRotation}" 
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                         <div class="min-w-0 flex-grow">
-                            <h3 class="text-base md:text-lg font-bold text-slate-900 group-hover:text-indigo-700 transition-colors select-none truncate">${cat.name}</h3>
+                            <h3 class="text-base md:text-lg font-bold group-hover:text-indigo-700 transition-colors select-none truncate ${headerHover}">${cat.name}</h3>
                             <p class="text-xs text-slate-500 font-medium select-none truncate">${cardCount} Cards</p>
                         </div>
                     </div>
@@ -445,8 +464,10 @@ function renderManagement(container, categories, categoryStats) {
                     </div>
                 </div>
 
-                <div id="cat-content-${cat.id}" class="hidden transition-all duration-300 ease-in-out">
-                    ${cardsPreview}
+                <div id="cat-content-${cat.id}" class="grid transition-[grid-template-rows] duration-300 ease-out ${gridState}">
+                    <div class="overflow-hidden">
+                        ${cardsPreview}
+                    </div>
                 </div>
             </div>
         `;
@@ -479,8 +500,17 @@ window.toggleAccordion = (contentId, chevronId) => {
     const content = document.getElementById(contentId);
     const chevron = document.getElementById(chevronId);
     if (!content) return;
-    content.classList.toggle('hidden');
-    chevron.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+
+    // Toggle grid state
+    if (content.classList.contains('grid-rows-[0fr]')) {
+        content.classList.remove('grid-rows-[0fr]');
+        content.classList.add('grid-rows-[1fr]');
+        chevron.style.transform = 'rotate(180deg)';
+    } else {
+        content.classList.remove('grid-rows-[1fr]');
+        content.classList.add('grid-rows-[0fr]');
+        chevron.style.transform = 'rotate(0deg)';
+    }
 };
 
 // -- Delete Category using Common Modal --

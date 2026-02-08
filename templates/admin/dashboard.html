@@ -174,6 +174,76 @@
     function renderCategoryRankings(categoryStats) {
         const container = document.getElementById('category-rankings');
 
+        // Capture current state of open accordions
+        const openCategories = new Set();
+        const existingHiddenSections = container.querySelectorAll('[id^="hidden-cards-"]');
+        existingHiddenSections.forEach(el => {
+            if (el.classList.contains('grid-rows-[1fr]')) {
+                const id = el.id.replace('hidden-cards-', ''); // This is currently the index, but we should use ID if possible. 
+                // However, the previous logic used index. Let's stick to index if we must, or switch to ID.
+                // Switching to ID is safer for persistence if order changes.
+                // But wait, the previous code generated IDs based on index: `hidden-cards-${catIndex}`.
+                // If data refreshes and order changes, index might point to a different category.
+                // BETTER: Use category.id for the DOM IDs.
+                // Let's check how the previous code generated it: `hidden-cards-${catIndex}`.
+                // I will switch to using `category.id` for robust persistence.
+
+                // Let's try to grab the ID from the dataset if I added it, but I didn't before.
+                // So for now, I will assume the previous code using indices might be flaky on reorder, 
+                // but since I'm rewriting the render function, I can change it to use category ID now.
+
+                // Oops, I can't easily get the category ID from the *old* DOM unless I had stored it.
+                // But I can try to read it if I add it now.
+                // For the *first* run, existing elements won't have the new ID format if I change it. 
+                // But since the page refreshes entirely on load, it's fine. 
+                // Wait, if I change the ID format, the first time this runs after code update (without page reload) might be tricky? 
+                // No, this is server-side template, so the user will get the new HTML on refresh.
+                // Actually, this is a JS function `renderStats` called by `loadDashboardStats`.
+                // So if the user already has the page open, they have the OLD JS.
+                // They need to refresh the page to get the NEW JS.
+                // So I can safely change the ID convention to use Category ID.
+            }
+        });
+
+        // Actually, let's look at the DOM again.
+        // The old code: id="hidden-cards-${catIndex}"
+        // The new code will use: id="hidden-cards-${category.id}"
+
+        // To migrate state from "old" (index-based) to "new" (id-based) without a reload is impossible because I don't know the mapping easily.
+        // BUT, I can just implement the new logic. The first time it runs, `openCategories` will be empty (or contain indices that don't match IDs), so everything closes.
+        // That is acceptible for the very first moment after deployment. 
+        // Subsequent refreshes (every 30s) will work fine.
+
+        // Revised State Capture:
+        // I'll check for BOTH patterns just in case, or just accept that first refresh might close things.
+        // Let's just implement robust ID-based one.
+
+        // WAIT: I need to check if the element exists before checking classList. 
+        // Iterate over the *rendered* categories to see which matched the *DOM* elements.
+        // But the DOM elements are about to be blown away.
+
+        // Better approach:
+        // 1. Get all elements with id starting with `hidden-cards-`
+        // 2. If they are open, store their ID suffix.
+        // 3. Render new list. If a category ID matches a stored suffix, keep it open.
+
+        // NOTE: The previous code used `catIndex`. 
+        // The NEW code will use `category.id`.
+        // So state will be lost ONCE when the user refreshes to get this new code (obviously), 
+        // or if the hot-reload happens?
+        // Actually this is just a standard JS update.
+
+        const openIds = new Set();
+        container.querySelectorAll('[id^="hidden-cards-"]').forEach(el => {
+            // Check if it's open. 
+            // Old way: !classList.contains('hidden')
+            // New way: classList.contains('grid-rows-[1fr]')
+            if (!el.classList.contains('hidden') || el.classList.contains('grid-rows-[1fr]')) {
+                const suffix = el.id.replace('hidden-cards-', '');
+                openIds.add(suffix);
+            }
+        });
+
         if (!categoryStats || categoryStats.length === 0) {
             container.innerHTML = `
                 <div class="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 text-center">
@@ -193,12 +263,16 @@
             return;
         }
 
-        container.innerHTML = categoryStats.map((category, catIndex) => {
+        container.innerHTML = categoryStats.map((category) => {
             const hasCards = category.cards && category.cards.length > 0;
             const leader = hasCards ? category.cards[0] : null;
             const visibleCards = hasCards ? category.cards.slice(0, 3) : [];
             const hiddenCards = hasCards ? category.cards.slice(3) : [];
             const hasMoreCards = hiddenCards.length > 0;
+
+            // Check if this category should be open
+            // We compare stringified IDs just to be safe
+            const isOpen = openIds.has(String(category.id));
 
             const renderCard = (card, index, isHidden = false) => {
                 const isLeader = index === 0 && category.total_votes > 0;
@@ -233,6 +307,11 @@
                 `;
             };
 
+            // Prepare dynamic classes based on open state
+            const gridState = isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]';
+            const iconRotation = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            const buttonText = isOpen ? 'Show less' : `Show ${hiddenCards.length} more`;
+
             return `
                 <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
                     <!-- Category Header -->
@@ -259,16 +338,21 @@
                     </div>
 
                     ${hasMoreCards ? `
-                        <!-- Hidden Cards Accordion -->
-                        <div id="hidden-cards-${catIndex}" class="hidden divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/50">
-                            ${hiddenCards.map((card, index) => renderCard(card, index + 3)).join('')}
+                        <!-- Hidden Cards Accordion with Grid Animation -->
+                        <div id="hidden-cards-${category.id}" 
+                             class="grid transition-[grid-template-rows] duration-300 ease-out ${gridState} border-t border-slate-100 bg-slate-50/50">
+                            <div class="overflow-hidden divide-y divide-slate-100">
+                                ${hiddenCards.map((card, index) => renderCard(card, index + 3)).join('')}
+                            </div>
                         </div>
                         
                         <!-- Show More Button -->
-                        <button onclick="toggleHiddenCards(${catIndex})" id="toggle-btn-${catIndex}"
+                        <button onclick="toggleHiddenCards('${category.id}', ${hiddenCards.length})" id="toggle-btn-${category.id}"
                             class="w-full py-3 border-t border-slate-100 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
-                            <span id="toggle-text-${catIndex}">Show ${hiddenCards.length} more</span>
-                            <svg id="toggle-icon-${catIndex}" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span id="toggle-text-${category.id}">${buttonText}</span>
+                            <svg id="toggle-icon-${category.id}" class="w-4 h-4 transition-transform duration-300" 
+                                 style="transform: ${iconRotation}"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
@@ -278,20 +362,23 @@
         }).join('');
     }
 
-    // Toggle hidden cards accordion
-    window.toggleHiddenCards = function (catIndex) {
-        const hiddenCards = document.getElementById(`hidden-cards-${catIndex}`);
-        const toggleIcon = document.getElementById(`toggle-icon-${catIndex}`);
-        const toggleText = document.getElementById(`toggle-text-${catIndex}`);
+    // Toggle hidden cards accordion with animation
+    window.toggleHiddenCards = function (catId, count) {
+        const hiddenCards = document.getElementById(`hidden-cards-${catId}`);
+        const toggleIcon = document.getElementById(`toggle-icon-${catId}`);
+        const toggleText = document.getElementById(`toggle-text-${catId}`);
 
-        if (hiddenCards.classList.contains('hidden')) {
-            hiddenCards.classList.remove('hidden');
+        if (hiddenCards.classList.contains('grid-rows-[0fr]')) {
+            // Open
+            hiddenCards.classList.remove('grid-rows-[0fr]');
+            hiddenCards.classList.add('grid-rows-[1fr]');
             toggleIcon.style.transform = 'rotate(180deg)';
             toggleText.textContent = 'Show less';
         } else {
-            hiddenCards.classList.add('hidden');
+            // Close
+            hiddenCards.classList.remove('grid-rows-[1fr]');
+            hiddenCards.classList.add('grid-rows-[0fr]');
             toggleIcon.style.transform = 'rotate(0deg)';
-            const count = hiddenCards.querySelectorAll('.ranking-card').length;
             toggleText.textContent = `Show ${count} more`;
         }
     };
