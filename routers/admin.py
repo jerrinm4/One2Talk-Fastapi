@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from datetime import timedelta
 from typing import List
 import shutil
@@ -77,11 +78,12 @@ def get_dashboard_stats(current_user: Admin = Depends(get_current_admin_user), d
                 "title": card.title,
                 "image_url": card.image_url,
                 "votes": card_votes,
+                "order": card.order or 0,
                 "percentage": round((card_votes / cat_total_votes * 100), 1) if cat_total_votes > 0 else 0 
             })
         
-        # Sort cards by votes desc for "who wins"
-        card_stats.sort(key=lambda x: x["votes"], reverse=True)
+        # Sort cards by custom order
+        card_stats.sort(key=lambda x: x["order"])
         
         category_stats.append({
             "id": cat.id,
@@ -110,7 +112,11 @@ def create_category(category: schemas.CategoryCreate, current_user: Admin = Depe
     if existing_category:
         raise HTTPException(status_code=400, detail="Category with this name already exists")
 
-    db_category = Category(name=category.name)
+    # Calculate next order
+    max_order = db.query(func.max(Category.order)).scalar()
+    next_order = (max_order or 0) + 1
+
+    db_category = Category(name=category.name, order=next_order)
     db.add(db_category)
     db.commit()
     db.refresh(db_category)
@@ -184,12 +190,29 @@ def delete_category(category_id: int, delete_data: schemas.CategoryDelete, curre
 # Card Management (Full Admin Only)
 @router.post("/cards", response_model=schemas.Card)
 def create_card(card: schemas.CardCreate, category_id: int, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
-    db_card = Card(**card.dict(), category_id=category_id)
+    # Calculate next order
+    max_order = db.query(func.max(Card.order)).filter(Card.category_id == category_id).scalar()
+    next_order = (max_order or 0) + 1
+    
+    db_card = Card(**card.dict(), category_id=category_id, order=next_order)
     db.add(db_card)
     db.commit()
     db.refresh(db_card)
     invalidate_dashboard_cache()
     return db_card
+
+@router.put("/cards/reorder")
+def reorder_cards(payload: schemas.CategoryReorderRequest, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
+    # payload.items is a list of card IDs in the new order
+    # Note: We assume all cards are in the same category for simplicity in this context, 
+    # or just update their global order relative to each other if standard sortable.
+    # But usually reordering happens within a category. 
+    # If the UI sends a flattened list of IDs, we just update their order index.
+    for index, card_id in enumerate(payload.items):
+        db.query(Card).filter(Card.id == card_id).update({"order": index})
+    db.commit()
+    invalidate_dashboard_cache()
+    return {"message": "Cards reordered successfully"}
 
 @router.put("/cards/{card_id}", response_model=schemas.Card)
 def update_card(card_id: int, card_update: schemas.CardUpdate, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):

@@ -323,13 +323,39 @@ function renderDashboardCategory(category) {
 /* =========================================
    3. Manage Logic (Categories & Cards)
    ========================================= */
+let cardSortables = {}; // Store Sortable instances by catId
+
 async function initManage() {
     window.loadManageData = loadManageData; // Expose to global for button onclicks
+    window.toggleReorder = toggleReorder;
     loadManageData();
-
-    // Sortable Init
-    // (Logic moved inside render to ensure elements exist)
 }
+
+function toggleReorder(catId) {
+    const sortable = cardSortables[catId];
+    const btn = document.getElementById(`reorder-btn-${catId}`);
+    const grid = document.getElementById(`card-grid-${catId}`);
+
+    if (!sortable || !btn || !grid) return;
+
+    const isDisabled = sortable.option('disabled');
+    const newState = !isDisabled; // If disabled, we want to enable (false)
+
+    sortable.option('disabled', newState);
+
+    if (!newState) {
+        // Enabled
+        btn.classList.add('text-indigo-600', 'bg-indigo-50');
+        btn.classList.remove('text-slate-400');
+        grid.classList.add('reorder-enabled');
+    } else {
+        // Disabled
+        btn.classList.remove('text-indigo-600', 'bg-indigo-50');
+        btn.classList.add('text-slate-400');
+        grid.classList.remove('reorder-enabled');
+    }
+}
+
 
 async function loadManageData() {
     const container = document.getElementById('management-container');
@@ -382,11 +408,12 @@ function renderManagement(container, categories, categoryStats) {
         // Cards Grid
         let cardsPreview = '';
         if (catStats && catStats.cards.length > 0) {
-            cardsPreview = '<div class="mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">';
+            // Added ID for SortableJS targeting
+            cardsPreview = `<div id="card-grid-${cat.id}" data-cat-id="${cat.id}" class="card-sortable mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">`;
             catStats.cards.forEach(card => {
                 const fullCard = cat.cards.find(c => c.id === card.id) || card; // ensure image_url exists
                 cardsPreview += `
-                    <div class="group relative bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all flex flex-col overflow-hidden">
+                    <div data-id="${fullCard.id}" class="group relative bg-white rounded-xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all flex flex-col overflow-hidden">
                         <div class="relative w-full bg-slate-100" style="aspect-ratio: 269/268;">
                             <img src="${fullCard.image_url || '/static/placeholder.png'}" class="absolute inset-0 w-full h-full object-cover">
                             <div class="absolute top-2 right-2 flex space-x-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -447,19 +474,22 @@ function renderManagement(container, categories, categoryStats) {
                     
                     <!-- Actions -->
                     <div class="flex items-center gap-1 md:gap-2 ml-2 flex-shrink-0">
+                        <button onclick="toggleReorder('${cat.id}')" id="reorder-btn-${cat.id}" class="p-1.5 md:p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors" title="Toggle Reorder">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                        </button>
+                        <button onclick="openEditCategoryModal('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')" class="p-1.5 md:p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors" title="Edit">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
+                        <button onclick="deleteCategory('${cat.id}')" class="p-1.5 md:p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                        <div class="h-5 md:h-6 w-px bg-slate-200 mx-1 md:mx-2"></div>
                          <button onclick="openCardModal('${cat.id}')" class="hidden sm:inline-flex items-center px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors border border-indigo-100">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                             Add
                         </button>
                          <button onclick="openCardModal('${cat.id}')" class="sm:hidden p-1.5 md:p-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        </button>
-                        <div class="h-5 md:h-6 w-px bg-slate-200 mx-1 md:mx-2"></div>
-                        <button onclick="openEditCategoryModal('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')" class="p-1.5 md:p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors" title="Edit">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-                        <button onclick="deleteCategory('${cat.id}')" class="p-1.5 md:p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
                 </div>
@@ -474,7 +504,7 @@ function renderManagement(container, categories, categoryStats) {
         container.appendChild(uiCard);
     });
 
-    // Init Sortable
+    // Init Sortable for Categories
     if (window.Sortable) {
         new Sortable(container, {
             animation: 150,
@@ -491,6 +521,30 @@ function renderManagement(container, categories, categoryStats) {
                     body: JSON.stringify({ items: order })
                 }).catch(err => console.error('Reorder failed', err));
             }
+        });
+
+        // Init Sortable for Cards (Nested)
+        const cardGrids = container.querySelectorAll('.card-sortable');
+        cardSortables = {}; // Reset global instances
+        cardGrids.forEach(grid => {
+            const catId = grid.dataset.catId;
+            cardSortables[catId] = new Sortable(grid, {
+                animation: 150,
+                disabled: true, // Disabled by default
+                ghostClass: 'opacity-50',
+                onEnd: function (evt) {
+                    const order = [];
+                    Array.from(evt.to.children).forEach(child => {
+                        if (child.dataset.id) order.push(parseInt(child.dataset.id));
+                    });
+
+                    // Reorder API call
+                    fetchAuth(`${API_BASE}/cards/reorder`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ items: order })
+                    }).catch(err => console.error('Card reorder failed', err));
+                }
+            });
         });
     }
 }
@@ -657,13 +711,17 @@ window.submitCard = async () => {
     const catId = document.getElementById('card-category-select').value;
     const title = document.getElementById('card-title').value;
     const subtitle = document.getElementById('card-subtitle').value;
-    const file = document.getElementById('card-image-file').files[0];
+    // Use cropped blob if available, else original file (fallback)
+    const file = currentCropBlob || document.getElementById('card-image-file').files[0];
 
     if (!title || !file) return;
 
     try {
         const formData = new FormData();
-        formData.append('file', file);
+        // Determine filename
+        const filename = currentCropBlob ? 'cropped.jpg' : file.name;
+        formData.append('file', file, filename);
+
         const upRes = await fetchAuth(`${API_BASE}/upload`, { method: 'POST', body: formData });
         const upData = await upRes.json();
 
@@ -671,9 +729,111 @@ window.submitCard = async () => {
             method: 'POST',
             body: JSON.stringify({ title, subtitle, image_url: upData.url })
         });
-        if (res.ok) { closeCardModal(); loadManageData(); }
+        if (res.ok) {
+            closeCardModal();
+            loadManageData();
+            currentCropBlob = null; // reset
+            document.getElementById('add-card-preview-container').classList.add('hidden');
+        }
     } catch (err) { console.error(err); await showAlert('Failed to create card', 'Error'); }
 };
+
+// Image Cropper State
+let cropper = null;
+let currentCropBlob = null;
+let activeFileInputId = null;
+let activePreviewId = null;
+let activePreviewContainerId = null;
+
+// Helper to init cropper on file change
+function setupCropper(fileInputId, previewId, containerId) {
+    const input = document.getElementById(fileInputId);
+    input.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            activeFileInputId = fileInputId;
+            activePreviewId = previewId;
+            activePreviewContainerId = containerId;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('crop-image').src = e.target.result;
+                document.getElementById('crop-modal').classList.remove('hidden');
+
+                if (cropper) cropper.destroy();
+                cropper = new Cropper(document.getElementById('crop-image'), {
+                    aspectRatio: 269 / 268,
+                    viewMode: 1,
+                    autoCropArea: 1,
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+// Setup listeners on load
+document.addEventListener('DOMContentLoaded', () => {
+    setupCropper('card-image-file', 'add-card-preview', 'add-card-preview-container');
+    setupCropper('edit-card-image-file', 'edit-card-preview', 'edit-card-preview-container');
+});
+
+window.cancelCrop = () => {
+    document.getElementById('crop-modal').classList.add('hidden');
+    if (cropper) cropper.destroy();
+    cropper = null;
+    // Reset file input if cancelled? Or keep original? Let's keep original for now but no blob.
+    // currentCropBlob = null; 
+    document.getElementById(activeFileInputId).value = ''; // clear input to force re-select
+};
+
+// Clear image selection
+window.clearAddCardImage = () => {
+    currentCropBlob = null;
+    document.getElementById('card-image-file').value = '';
+    document.getElementById('add-card-preview-container').classList.add('hidden');
+};
+
+window.confirmCrop = () => {
+    if (!cropper) return;
+    cropper.getCroppedCanvas({
+        maxWidth: 1080,
+        maxHeight: 1080,
+        imageSmoothingQuality: 'high'
+    }).toBlob((blob) => {
+        currentCropBlob = blob;
+
+        // Update preview
+        const url = URL.createObjectURL(blob);
+        document.getElementById(activePreviewId).src = url;
+        document.getElementById(activePreviewContainerId).classList.remove('hidden');
+
+        document.getElementById('crop-modal').classList.add('hidden');
+        cropper.destroy();
+        cropper = null;
+    }, 'image/jpeg', 0.9);
+};
+
+// Zoom Controls
+window.zoomCropper = (delta) => {
+    if (!cropper) return;
+    cropper.zoom(delta);
+};
+
+window.zoomCropperTo = (ratio) => {
+    if (!cropper) return;
+    const imageData = cropper.getImageData();
+    const currentZoom = imageData.width / imageData.naturalWidth;
+    const newZoom = parseFloat(ratio);
+    cropper.zoomTo(newZoom);
+};
+
+window.resetCropper = () => {
+    if (!cropper) return;
+    cropper.reset();
+    document.getElementById('crop-zoom-slider').value = 1;
+};
+
 
 // Edit Category
 window.openEditCategoryModal = (id, name) => {
@@ -702,17 +862,32 @@ window.submitEditCard = async () => {
     const id = document.getElementById('edit-card-id').value;
     const title = document.getElementById('edit-card-title').value;
     const subtitle = document.getElementById('edit-card-subtitle').value;
-    let imageUrl = document.getElementById('edit-card-image-preview').src;
-    const file = document.getElementById('edit-card-image-file').files[0];
+    const file = currentCropBlob || document.getElementById('edit-card-image-file').files[0];
 
-    if (file) {
-        const fd = new FormData(); fd.append('file', file);
-        const upRes = await fetchAuth(`${API_BASE}/upload`, { method: 'POST', body: fd });
-        imageUrl = (await upRes.json()).url;
-    }
+    try {
+        let imageUrl = document.getElementById('edit-card-image-preview').src; // Default to existing
 
-    const res = await fetchAuth(`${API_BASE}/cards/${id}`, { method: 'PUT', body: JSON.stringify({ title, subtitle, image_url: imageUrl }) });
-    if (res.ok) { closeEditCardModal(); loadManageData(); }
+        if (file) {
+            const formData = new FormData();
+            const filename = currentCropBlob ? 'cropped.jpg' : file.name;
+            formData.append('file', file, filename);
+            const upRes = await fetchAuth(`${API_BASE}/upload`, { method: 'POST', body: formData });
+            const upData = await upRes.json();
+            imageUrl = upData.url;
+        }
+
+        const res = await fetchAuth(`${API_BASE}/cards/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ title, subtitle, image_url: imageUrl })
+        });
+
+        if (res.ok) {
+            closeEditCardModal();
+            loadManageData();
+            currentCropBlob = null; // reset
+            document.getElementById('edit-card-preview-container').classList.add('hidden');
+        }
+    } catch (err) { console.error(err); await showAlert('Failed to update card', 'Error'); }
 };
 
 

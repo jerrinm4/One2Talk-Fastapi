@@ -451,7 +451,7 @@ header .nav-btn {
 .pool-card-title {
     font-family: var(--font-anek-malayalam);
     text-align: center;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
 }
 
@@ -1248,7 +1248,7 @@ footer .footer-wrapper .social-links a svg path {
     }
 
     .pool-card-title {
-        font-size: 20px;
+        font-size: 18px;
     }
 
     .pool-card-btn {
