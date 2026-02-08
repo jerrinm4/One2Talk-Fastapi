@@ -46,13 +46,9 @@ def get_current_admin_user(current_user: Admin = Depends(auth.get_current_admin)
 @router.get("/dashboard-stats")
 def get_dashboard_stats(current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
     global _dashboard_cache
-    start_time = time.time()
-    current_time = start_time
     
     # Return cached data if still valid
-    if _dashboard_cache["data"] and (current_time - _dashboard_cache["timestamp"]) < DASHBOARD_CACHE_TTL:
-        elapsed = (time.time() - start_time) * 1000
-        print(f"[CACHE HIT] /api/admin/dashboard-stats - {elapsed:.2f}ms")
+    if _dashboard_cache["data"] and (time.time() - _dashboard_cache["timestamp"]) < DASHBOARD_CACHE_TTL:
         return _dashboard_cache["data"]
     
     total_votes = db.query(Vote).count()
@@ -94,11 +90,8 @@ def get_dashboard_stats(current_user: Admin = Depends(get_current_admin_user), d
     
     # Update cache
     _dashboard_cache["data"] = result
-    _dashboard_cache["timestamp"] = current_time
-    
-    elapsed = (time.time() - start_time) * 1000
-    print(f"[CACHE MISS] /api/admin/dashboard-stats - {elapsed:.2f}ms (fetched from DB)")
-    
+    _dashboard_cache["timestamp"] = time.time()
+
     return result
 
 # Category Management

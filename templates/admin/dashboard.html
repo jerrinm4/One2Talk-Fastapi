@@ -103,7 +103,7 @@
 <!-- Category Rankings Section -->
 <div class="mb-6">
     <h2 class="text-xl font-black text-slate-900 mb-2">Vote Rankings by Category</h2>
-    <p class="text-slate-500 text-sm">Real-time voting results with leader indicators</p>
+    <p class="text-slate-500 text-sm">Real-time voting results with lead indicators</p>
 </div>
 
 <div id="category-rankings" class="space-y-6">
@@ -193,69 +193,108 @@
             return;
         }
 
-        container.innerHTML = categoryStats.map(category => {
+        container.innerHTML = categoryStats.map((category, catIndex) => {
             const hasCards = category.cards && category.cards.length > 0;
             const leader = hasCards ? category.cards[0] : null;
+            const visibleCards = hasCards ? category.cards.slice(0, 3) : [];
+            const hiddenCards = hasCards ? category.cards.slice(3) : [];
+            const hasMoreCards = hiddenCards.length > 0;
+
+            const renderCard = (card, index, isHidden = false) => {
+                const isLeader = index === 0 && category.total_votes > 0;
+                return `
+                    <div class="ranking-card p-4 md:px-6 flex items-center gap-4 ${isHidden ? '' : ''}">
+                        <!-- Rank Number -->
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full ${isLeader ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-slate-100 text-slate-600'} flex items-center justify-center font-bold text-sm">
+                            ${index + 1}
+                        </div>
+                        
+                        <!-- Card Image -->
+                        <div class="flex-shrink-0">
+                            <img src="${card.image_url || '/assets/placeholder.png'}" 
+                                 alt="${escapeHtml(card.title)}" 
+                                 class="w-12 h-12 rounded-lg object-cover bg-slate-100 ${isLeader ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}">
+                        </div>
+                        
+                        <!-- Card Info & Progress -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="font-semibold text-slate-900 truncate">${escapeHtml(card.title)}</span>
+                                <span class="text-sm font-medium ${isLeader ? 'text-emerald-600' : 'text-slate-500'}">${card.votes} votes</span>
+                            </div>
+                            <!-- Progress Bar -->
+                            <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="progress-track h-full rounded-full ${isLeader ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-blue-600'}" 
+                                     style="width: ${card.percentage}%"></div>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-1">${card.percentage}%</div>
+                        </div>
+                    </div>
+                `;
+            };
 
             return `
                 <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
                     <!-- Category Header -->
                     <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                         <div>
-                            <h3 class="text-lg font-bold text-slate-900">${escapeHtml(category.name)}</h3>
-                            <p class="text-slate-500 text-sm">${category.total_votes} total votes</p>
+                            <h3 class="text-lg font-bold text-slate-900 border-l-4 border-green-500 pl-3">${escapeHtml(category.name)}</h3>
+                            <p class="text-slate-500 text-sm mt-1">${category.total_votes} total votes</p>
                         </div>
                         ${leader && category.total_votes > 0 ? `
                             <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full">
                                 <span class="leader-badge w-2 h-2 bg-emerald-500 rounded-full"></span>
-                                <span class="text-emerald-700 text-sm font-medium">Leader: ${escapeHtml(leader.title)}</span>
+                                <span class="text-emerald-700 text-sm font-medium">Lead: ${escapeHtml(leader.title)}</span>
                             </div>
                         ` : ''}
                     </div>
                     
                     <!-- Cards Ranking -->
                     <div class="divide-y divide-slate-100">
-                        ${hasCards ? category.cards.map((card, index) => {
-                const isLeader = index === 0 && category.total_votes > 0;
-                return `
-                                <div class="ranking-card p-4 md:px-6 flex items-center gap-4">
-                                    <!-- Rank Number -->
-                                    <div class="flex-shrink-0 w-8 h-8 rounded-full ${isLeader ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-slate-100 text-slate-600'} flex items-center justify-center font-bold text-sm">
-                                        ${index + 1}
-                                    </div>
-                                    
-                                    <!-- Card Image -->
-                                    <div class="flex-shrink-0">
-                                        <img src="${card.image_url || '/assets/placeholder.png'}" 
-                                             alt="${escapeHtml(card.title)}" 
-                                             class="w-12 h-12 rounded-lg object-cover bg-slate-100 ${isLeader ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}">
-                                    </div>
-                                    
-                                    <!-- Card Info & Progress -->
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center justify-between mb-1.5">
-                                            <span class="font-semibold text-slate-900 truncate">${escapeHtml(card.title)}</span>
-                                            <span class="text-sm font-medium ${isLeader ? 'text-emerald-600' : 'text-slate-500'}">${card.votes} votes</span>
-                                        </div>
-                                        <!-- Progress Bar -->
-                                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                            <div class="progress-track h-full rounded-full ${isLeader ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-blue-600'}" 
-                                                 style="width: ${card.percentage}%"></div>
-                                        </div>
-                                        <div class="text-xs text-slate-400 mt-1">${card.percentage}%</div>
-                                    </div>
-                                </div>
-                            `;
-            }).join('') : `
+                        ${hasCards ? visibleCards.map((card, index) => renderCard(card, index)).join('') : `
                             <div class="p-6 text-center text-slate-500">
                                 <p>No cards in this category yet</p>
                             </div>
                         `}
                     </div>
+
+                    ${hasMoreCards ? `
+                        <!-- Hidden Cards Accordion -->
+                        <div id="hidden-cards-${catIndex}" class="hidden divide-y divide-slate-100 border-t border-slate-100 bg-slate-50/50">
+                            ${hiddenCards.map((card, index) => renderCard(card, index + 3)).join('')}
+                        </div>
+                        
+                        <!-- Show More Button -->
+                        <button onclick="toggleHiddenCards(${catIndex})" id="toggle-btn-${catIndex}"
+                            class="w-full py-3 border-t border-slate-100 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                            <span id="toggle-text-${catIndex}">Show ${hiddenCards.length} more</span>
+                            <svg id="toggle-icon-${catIndex}" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    ` : ''}
                 </div>
             `;
         }).join('');
     }
+
+    // Toggle hidden cards accordion
+    window.toggleHiddenCards = function (catIndex) {
+        const hiddenCards = document.getElementById(`hidden-cards-${catIndex}`);
+        const toggleIcon = document.getElementById(`toggle-icon-${catIndex}`);
+        const toggleText = document.getElementById(`toggle-text-${catIndex}`);
+
+        if (hiddenCards.classList.contains('hidden')) {
+            hiddenCards.classList.remove('hidden');
+            toggleIcon.style.transform = 'rotate(180deg)';
+            toggleText.textContent = 'Show less';
+        } else {
+            hiddenCards.classList.add('hidden');
+            toggleIcon.style.transform = 'rotate(0deg)';
+            const count = hiddenCards.querySelectorAll('.ranking-card').length;
+            toggleText.textContent = `Show ${count} more`;
+        }
+    };
 
     function escapeHtml(text) {
         const div = document.createElement('div');
