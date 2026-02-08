@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from database import Base
 
 class User(Base):
@@ -9,6 +10,7 @@ class User(Base):
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
     phone = Column(String, unique=True, index=True)
+    created_at = Column(DateTime, server_default=func.now())
 
     votes = relationship("Vote", back_populates="user")
 
@@ -18,6 +20,8 @@ class Category(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     order = Column(Integer, default=0)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     cards = relationship("Card", back_populates="category")
     votes = relationship("Vote", back_populates="category")
@@ -30,6 +34,8 @@ class Card(Base):
     title = Column(String)
     subtitle = Column(String)  # Supports // for line breaks
     image_url = Column(String)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     category = relationship("Category", back_populates="cards")
     votes = relationship("Vote", back_populates="card")
@@ -41,6 +47,7 @@ class Vote(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     category_id = Column(Integer, ForeignKey("categories.id"))
     card_id = Column(Integer, ForeignKey("cards.id"))
+    created_at = Column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="votes")
     category = relationship("Category", back_populates="votes")
