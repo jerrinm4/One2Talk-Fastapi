@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import List
 
 # Configuration
-BASE_URL = "http://localhost:4040"
+BASE_URL = "http://localhost:4050"
 CATEGORIES_ENDPOINT = f"{BASE_URL}/api/categories"
 VOTE_ENDPOINT = f"{BASE_URL}/api/vote"
 

@@ -1,8 +1,13 @@
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from models import Admin
 import auth
-import sys
 
 def create_admin():
     print("Creating Admin User (Direct DB Connection)")
