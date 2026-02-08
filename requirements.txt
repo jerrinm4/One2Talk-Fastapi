@@ -19,3 +19,6 @@ aiofiles>=23.0.0
 
 # Environment
 python-dotenv>=1.0.0
+
+# Cloudflare R2 (S3-compatible)
+boto3>=1.34.0

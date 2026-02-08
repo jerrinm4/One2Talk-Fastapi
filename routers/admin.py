@@ -9,7 +9,8 @@ import os
 import uuid
 import time
 import hashlib
-
+import config
+from r2_storage import upload_to_r2, file_exists_in_r2
 from database import get_db
 from models import User, Category, Card, Vote, Admin, Settings
 import schemas
@@ -260,28 +261,52 @@ def delete_card(card_id: int, delete_data: schemas.CardDelete, current_user: Adm
 # File Upload (Full Admin Only)
 @router.post("/upload")
 async def upload_image(file: UploadFile = File(...), current_user: Admin = Depends(require_full_admin)):
+    
+    
+    # Read file content and calculate SHA256 hash
+    file_content = await file.read()
+    sha256_hash = hashlib.sha256(file_content).hexdigest()
+    
+    file_extension = file.filename.split(".")[-1].lower()
+    filename = f"{sha256_hash}.{file_extension}"
+    
+    # Determine content type
+    content_type_map = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "gif": "image/gif",
+        "webp": "image/webp",
+        "svg": "image/svg+xml"
+    }
+    content_type = content_type_map.get(file_extension, "application/octet-stream")
+    
+    # Try R2 upload if enabled
+    if config.R2_ENABLED:
+        # Check if file already exists in R2
+        if file_exists_in_r2(filename):
+            public_url = config.R2_PUBLIC_URL.rstrip('/')
+            return {"url": f"{public_url}/{filename}"}
+        
+        # Upload to R2
+        r2_url = upload_to_r2(file_content, filename, content_type)
+        if r2_url:
+            return {"url": r2_url}
+        # If R2 upload fails, fall back to local storage
+    
+    # Local storage fallback
     UPLOAD_DIR = "uploads"
     if not os.path.exists(UPLOAD_DIR):
         os.makedirs(UPLOAD_DIR)
-        
-    # Calculate SHA256 hash
-    sha256_hash = hashlib.sha256()
-    for byte_block in iter(lambda: file.file.read(4096), b""):
-        sha256_hash.update(byte_block)
     
-    # Reset file cursor
-    file.file.seek(0)
-    
-    file_extension = file.filename.split(".")[-1]
-    filename = f"{sha256_hash.hexdigest()}.{file_extension}"
     file_location = f"{UPLOAD_DIR}/{filename}"
     
-    # Check if file exists
+    # Check if file exists locally
     if os.path.exists(file_location):
         return {"url": f"/uploads/{filename}"}
     
-    with open(file_location, "wb+") as file_object:
-        shutil.copyfileobj(file.file, file_object)
+    with open(file_location, "wb") as file_object:
+        file_object.write(file_content)
         
     return {"url": f"/uploads/{filename}"}
 
