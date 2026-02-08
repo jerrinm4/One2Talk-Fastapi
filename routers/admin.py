@@ -273,17 +273,12 @@ def get_users(
     total = query.count()
     users = query.order_by(User.id.desc()).offset((page - 1) * limit).limit(limit).all()
     
-    # Enrich with vote count
-    user_data = []
-    for u in users:
-        vote_count = db.query(Vote).filter(Vote.user_id == u.id).count()
-        user_data.append({
-            "id": u.id,
-            "name": u.name,
-            "email": u.email,
-            "phone": u.phone,
-            "vote_count": vote_count
-        })
+    user_data = [{
+        "id": u.id,
+        "name": u.name,
+        "email": u.email,
+        "phone": u.phone
+    } for u in users]
         
     return {
         "users": user_data,

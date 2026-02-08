@@ -676,7 +676,7 @@ async function loadUsers() {
 
         // Render Table
         if (data.users.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400">No users found.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">No users found.</td></tr>`;
         } else {
             tableBody.innerHTML = data.users.map(user => `
                 <tr class="hover:bg-slate-50 transition-colors group">
@@ -684,11 +684,6 @@ async function loadUsers() {
                     <td class="px-6 py-4 font-medium text-slate-900">${user.name}</td>
                     <td class="px-6 py-4 text-slate-600">${user.phone}</td>
                     <td class="px-6 py-4 text-slate-600">${user.email}</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            ${user.vote_count}
-                        </span>
-                    </td>
                     <td class="px-6 py-4 text-right">
                         <button onclick="deleteUser(${user.id}, '${user.name.replace(/'/g, "\\'")}')" 
                             class="text-slate-400 hover:text-red-600 transition-colors p-1 rounded hover:bg-red-50">

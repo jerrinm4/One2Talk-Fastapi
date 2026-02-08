@@ -16,15 +16,6 @@
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
         </div>
-        <!-- Refresh Button -->
-        <button onclick="loadUsers()" class="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
-            title="Refresh">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                </path>
-            </svg>
-        </button>
     </div>
 
     <!-- Table -->
@@ -37,14 +28,13 @@
                     <th class="px-6 py-4">Name</th>
                     <th class="px-6 py-4">Phone</th>
                     <th class="px-6 py-4">Email</th>
-                    <th class="px-6 py-4 text-center">Votes</th>
                     <th class="px-6 py-4 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody id="users-table-body" class="text-sm text-slate-700 divide-y divide-slate-100">
                 <!-- Dynamic Rows -->
                 <tr>
-                    <td colspan="6" class="px-6 py-8 text-center text-slate-400">Loading users...</td>
+                    <td colspan="5" class="px-6 py-8 text-center text-slate-400">Loading users...</td>
                 </tr>
             </tbody>
         </table>
