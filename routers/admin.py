@@ -7,6 +7,7 @@ import shutil
 import os
 import uuid
 import time
+import hashlib
 
 from database import get_db
 from models import User, Category, Card, Vote, Admin, Settings
@@ -21,6 +22,10 @@ router = APIRouter(
 # Simple cache for dashboard stats (30 second TTL)
 _dashboard_cache = {"data": None, "timestamp": 0}
 DASHBOARD_CACHE_TTL = 30  # seconds
+
+def invalidate_dashboard_cache():
+    global _dashboard_cache
+    _dashboard_cache = {"data": None, "timestamp": 0}
 
 # Login
 @router.post("/token", response_model=schemas.Token)
@@ -105,6 +110,7 @@ def create_category(category: schemas.CategoryCreate, current_user: Admin = Depe
     db.add(db_category)
     db.commit()
     db.refresh(db_category)
+    invalidate_dashboard_cache()
     return db_category
 
 @router.get("/categories", response_model=List[schemas.Category])
@@ -117,14 +123,7 @@ def reorder_categories(payload: schemas.CategoryReorderRequest, current_user: Ad
     for index, cat_id in enumerate(payload.items):
         db.query(Category).filter(Category.id == cat_id).update({"order": index})
     db.commit()
-    return {"message": "Categories reordered successfully"}
-
-@router.put("/categories/reorder")
-def reorder_categories(payload: schemas.CategoryReorderRequest, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
-    # payload.items is a list of category IDs in the new order
-    for index, cat_id in enumerate(payload.items):
-        db.query(Category).filter(Category.id == cat_id).update({"order": index})
-    db.commit()
+    invalidate_dashboard_cache()
     return {"message": "Categories reordered successfully"}
 
 @router.put("/categories/{category_id}", response_model=schemas.Category)
@@ -136,13 +135,8 @@ def update_category(category_id: int, category_update: schemas.CategoryUpdate, c
     db_category.name = category_update.name
     db.commit()
     db.refresh(db_category)
-    db.commit()
-    db.refresh(db_category)
+    invalidate_dashboard_cache()
     return db_category
-
-
-
-
 
 @router.get("/categories/{category_id}/dependencies")
 def get_category_dependencies(category_id: int, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
@@ -180,6 +174,7 @@ def delete_category(category_id: int, delete_data: schemas.CategoryDelete, curre
 
     db.delete(db_category)
     db.commit()
+    invalidate_dashboard_cache()
     return {"message": "Category deleted successfully"}
 
 # Card Management (Full Admin Only)
@@ -189,6 +184,7 @@ def create_card(card: schemas.CardCreate, category_id: int, current_user: Admin 
     db.add(db_card)
     db.commit()
     db.refresh(db_card)
+    invalidate_dashboard_cache()
     return db_card
 
 @router.put("/cards/{card_id}", response_model=schemas.Card)
@@ -205,6 +201,7 @@ def update_card(card_id: int, card_update: schemas.CardUpdate, current_user: Adm
         
     db.commit()
     db.refresh(db_card)
+    invalidate_dashboard_cache()
     return db_card
 
 @router.get("/cards/{card_id}/dependencies")
@@ -230,6 +227,7 @@ def delete_card(card_id: int, delete_data: schemas.CardDelete, current_user: Adm
     
     db.delete(db_card)
     db.commit()
+    invalidate_dashboard_cache()
     return {"message": "Card deleted successfully"}
 
 # File Upload (Full Admin Only)
@@ -239,9 +237,21 @@ async def upload_image(file: UploadFile = File(...), current_user: Admin = Depen
     if not os.path.exists(UPLOAD_DIR):
         os.makedirs(UPLOAD_DIR)
         
+    # Calculate SHA256 hash
+    sha256_hash = hashlib.sha256()
+    for byte_block in iter(lambda: file.file.read(4096), b""):
+        sha256_hash.update(byte_block)
+    
+    # Reset file cursor
+    file.file.seek(0)
+    
     file_extension = file.filename.split(".")[-1]
-    filename = f"{uuid.uuid4()}.{file_extension}"
+    filename = f"{sha256_hash.hexdigest()}.{file_extension}"
     file_location = f"{UPLOAD_DIR}/{filename}"
+    
+    # Check if file exists
+    if os.path.exists(file_location):
+        return {"url": f"/uploads/{filename}"}
     
     with open(file_location, "wb+") as file_object:
         shutil.copyfileobj(file.file, file_object)
