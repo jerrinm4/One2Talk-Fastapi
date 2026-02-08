@@ -46,6 +46,16 @@ app.mount("/static/admin", StaticFiles(directory="static/admin"), name="admin_st
 async def read_index():
     return FileResponse('index.html')
 
+# Serve Terms & Conditions
+@app.get("/terms")
+async def read_terms():
+    return FileResponse('terms.html')
+
+# Serve Privacy Policy
+@app.get("/privacy")
+async def read_privacy():
+    return FileResponse('privacy.html')
+
 # Serve Admin Dashboard
 @app.get("/admin", response_class=HTMLResponse)
 async def read_admin_dashboard(request: Request):
