@@ -13,8 +13,6 @@ router = APIRouter(
 @router.get("/categories")
 def get_categories(db: Session = Depends(get_db)):
     categories = db.query(Category).order_by(Category.order.asc()).all()
-    # Explicitly convert to Pydantic models to ensure successful serialization
-    # since we are returning a dict, not a List[Model] directly.
     return {"categories": [schemas.Category.model_validate(c) for c in categories]}
 
 @router.post("/vote")

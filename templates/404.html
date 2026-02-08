@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #101010;
+            font-family: "Inter", sans-serif;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .error-code {
+            font-size: clamp(5rem, 18vw, 10rem);
+            font-weight: 800;
+            background: linear-gradient(90deg, #FAA508 0%, #FFDD6C 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-message {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: #FFFFFF;
+            opacity: 0.7;
+            margin-bottom: 2rem;
+        }
+
+        .home-btn {
+            display: inline-block;
+            padding: 0.9rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #101010;
+            background: linear-gradient(90deg, #FAA508 0%, #FFDD6C 100%);
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .home-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(250, 165, 8, 0.3);
+        }
+
+        .home-btn:active {
+            transform: translateY(0);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            .home-btn {
+                padding: 0.8rem 1.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="error-code">404</h1>
+        <p class="error-message">Page not found</p>
+        <a href="/" class="home-btn">Go to Home</a>
+    </div>
+</body>
+
+</html>

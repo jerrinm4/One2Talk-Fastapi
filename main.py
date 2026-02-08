@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from routers import admin, user
 from database import engine, Base
 
@@ -11,6 +12,16 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
+
+# Custom 404 Exception Handler
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
+    # For other HTTP exceptions, return default JSON response
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
 
 # Mount API Routers
 app.include_router(admin.router)
