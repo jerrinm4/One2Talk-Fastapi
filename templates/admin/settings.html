@@ -45,7 +45,7 @@
 </div>
 
 <!-- Voting Settings Card -->
-<div class="bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
+<div id="voting-config-section" class="bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
     <h2 class="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
         <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -53,7 +53,9 @@
         </svg>
         Voting Configuration
     </h2>
-    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
+
+    <!-- Voting Enable/Disable -->
+    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 mb-4">
         <div>
             <p class="font-medium text-slate-900">Enable Vote Submission</p>
             <p class="text-sm text-slate-500">When disabled, users cannot submit new votes.</p>
@@ -65,7 +67,22 @@
             </div>
         </label>
     </div>
-    <p id="voting-status" class="mt-3 text-sm text-slate-500"></p>
+    <p id="voting-status" class="text-sm text-slate-500 mb-4"></p>
+
+    <!-- Show Poll Count -->
+    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
+        <div>
+            <p class="font-medium text-slate-900">Show Poll Count</p>
+            <p class="text-sm text-slate-500">Display total votes counter on the voting page.</p>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="poll-count-toggle" class="sr-only peer">
+            <div
+                class="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600">
+            </div>
+        </label>
+    </div>
+    <p id="poll-count-status" class="text-sm text-slate-500 mt-3"></p>
 </div>
 
 {% endblock %}

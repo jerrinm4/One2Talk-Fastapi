@@ -553,10 +553,72 @@ setTimeout(() => {
 }, 100);
 
 // =============================================
+// POLL COUNT
+// =============================================
+
+let pollCountTarget = 0;
+
+async function loadPollCount() {
+    try {
+        const response = await fetch('/api/poll-count');
+        const data = await response.json();
+
+        const section = document.getElementById('poll-count-section');
+        const valueEl = document.getElementById('poll-count-value');
+
+        if (data.enabled && section && valueEl) {
+            pollCountTarget = data.total_votes;
+            valueEl.dataset.target = pollCountTarget;
+            section.classList.remove('hidden');
+
+            // Set up Intersection Observer for scroll-triggered animation
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateCounter(valueEl, pollCountTarget, 1500);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            observer.observe(section);
+        }
+    } catch (error) {
+        console.error('Error loading poll count:', error);
+    }
+}
+
+function animateCounter(element, target, duration) {
+    const start = 0;
+    const startTime = performance.now();
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Ease-out cubic for smooth deceleration
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(start + (target - start) * easeOut);
+
+        element.textContent = current.toLocaleString();
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            element.textContent = target.toLocaleString();
+        }
+    }
+
+    requestAnimationFrame(update);
+}
+
+// =============================================
 // INITIALIZE ON DOM READY
 // =============================================
 
 document.addEventListener('DOMContentLoaded', () => {
     loadCategories();
     initContactForm();
+    loadPollCount();
 });
+

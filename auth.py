@@ -50,3 +50,13 @@ async def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = D
     if admin is None:
         raise credentials_exception
     return admin
+
+def require_full_admin(current_user: Admin = Depends(get_current_admin)):
+    """Dependency that requires full admin role. Blocks view_admin users."""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Full admin privileges required."
+        )
+    return current_user
+

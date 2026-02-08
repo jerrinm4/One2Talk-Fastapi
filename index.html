@@ -97,9 +97,10 @@
                     <div class="banner-footer-text" data-aos="fade-up" data-aos-duration="600">
                         Experience the next
                     </div>
-                    <div class="banner-footer-logo" data-aos="fade-up" data-aos-duration="600" data-aos-delay="100">
+                    <a href="https://myg.in/" target="_blank" class="banner-footer-logo" data-aos="fade-up"
+                        data-aos-duration="600" data-aos-delay="100">
                         <img src="./assets/images/my-G-LOGO.png" alt="">
-                    </div>
+                    </a>
                 </div>
             </div>
         </section>
@@ -107,7 +108,10 @@
         <section class="pool-section" id="vote-now">
             <!-- Categories will be dynamically rendered from JSON -->
             <div id="categories-container"></div>
+
+
         </section>
+
 
 
         <section class="form-section" id="contact-form-section">
@@ -137,7 +141,24 @@
                 </div>
             </div>
         </section>
+        <!-- Poll Count Section -->
+        <section id="poll-count-section" class="poll-count-section hidden">
+            <div class="container">
+                <div class="poll-count-card">
+                    <span class="poll-count-label fs-h2">Total Votes Cast</span>
+                    <span class="poll-count-value fs-h1"><span id="poll-count-value" data-target="0">0</span> +</span>
+                </div>
+            </div>
+        </section>
 
+        <!--    powerdby section-->
+        <section class="powered-by-section">
+            <div class="container">
+                <a href="https://alazharthodupuzha.org/" target="_blank" class="powered-by">
+                    <img src="./assets/images/al-azhar-website-logo.png" alt="">
+                </a>
+            </div>
+        </section>
         <!-- Success Popup -->
         <div class="success-popup" id="success-popup">
             <div class="popup-backdrop"></div>
@@ -160,6 +181,7 @@
                 <button class="popup-close-btn" onclick="closePopup()">Continue</button>
             </div>
         </div>
+
 
     </main>
     <footer>

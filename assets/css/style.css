@@ -725,6 +725,27 @@ header .nav-btn {
     animation: confetti8 0.8s ease forwards 0.1s;
 }
 
+
+
+/* =========================================
+   POWERED BY SECTION
+   ========================================= */
+.powered-by-section {
+    padding: 40px 0;
+    background-color: #A42669;
+}
+
+.powered-by {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.powered-by img {
+    max-width: 250px;
+}
+
 /* =========================================
    SUCCESS POPUP
    ========================================= */
@@ -1236,6 +1257,16 @@ footer .footer-wrapper .social-links a svg path {
         gap: 8px;
     }
 
+    .powered-by-section {
+        padding: 20px 0;
+    }
+
+
+
+    .powered-by img {
+        max-width: 200px;
+    }
+
     .footer-top {
         padding: 60px 0;
     }
@@ -1347,6 +1378,11 @@ footer .footer-wrapper .social-links a svg path {
         max-width: 100%;
         padding: 0 10px;
     }
+
+    .powered-by-section {
+        padding: 10px 0;
+    }
+
 }
 
 @media (max-width: 576px) {
@@ -1493,4 +1529,38 @@ footer .footer-wrapper .social-links a svg path {
 
 .hidden {
     display: none !important;
+}
+
+/* =========================================
+   POLL COUNT SECTION
+   ========================================= */
+.poll-count-section {
+    padding: 40px 0;
+}
+
+.poll-count-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+
+
+
+.poll-count-label {
+
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.poll-count-value {
+
+    color: var(--white);
+}
+
+@media (max-width: 480px) {
+    .poll-count-card {
+        gap: 12px;
+    }
 }

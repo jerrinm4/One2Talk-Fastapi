@@ -66,7 +66,13 @@ async def read_admin_manage(request: Request):
 async def read_admin_users(request: Request):
     return templates.TemplateResponse("admin/users.html", {"request": request, "active_page": "users"})
 
+# Serve Admin Users Management Page (for managing admin accounts)
+@app.get("/admin/admin-users", response_class=HTMLResponse)
+async def read_admin_admin_users(request: Request):
+    return templates.TemplateResponse("admin/admin-users.html", {"request": request, "active_page": "admin-users"})
+
 # Serve Admin Settings Page
 @app.get("/admin/settings", response_class=HTMLResponse)
 async def read_admin_settings(request: Request):
     return templates.TemplateResponse("admin/settings.html", {"request": request, "active_page": "settings"})
+

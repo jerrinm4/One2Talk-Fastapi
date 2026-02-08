@@ -34,12 +34,16 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user.username, "role": user.role or "admin"}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "role": user.role or "admin"}
 
-# Protected Dependency
+# Protected Dependency (any admin)
 def get_current_admin_user(current_user: Admin = Depends(auth.get_current_admin)):
+    return current_user
+
+# Protected Dependency (full admin only)
+def require_full_admin(current_user: Admin = Depends(auth.require_full_admin)):
     return current_user
 
 # Dashboard Stats
@@ -94,9 +98,9 @@ def get_dashboard_stats(current_user: Admin = Depends(get_current_admin_user), d
 
     return result
 
-# Category Management
+# Category Management (Full Admin Only)
 @router.post("/categories", response_model=schemas.Category)
-def create_category(category: schemas.CategoryCreate, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def create_category(category: schemas.CategoryCreate, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     db_category = Category(name=category.name)
     db.add(db_category)
     db.commit()
@@ -104,11 +108,11 @@ def create_category(category: schemas.CategoryCreate, current_user: Admin = Depe
     return db_category
 
 @router.get("/categories", response_model=List[schemas.Category])
-def get_categories(current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def get_categories(current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     return db.query(Category).order_by(Category.order.asc()).all()
 
 @router.put("/categories/reorder")
-def reorder_categories(payload: schemas.CategoryReorderRequest, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def reorder_categories(payload: schemas.CategoryReorderRequest, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     # payload.items is a list of category IDs in the new order
     for index, cat_id in enumerate(payload.items):
         db.query(Category).filter(Category.id == cat_id).update({"order": index})
@@ -124,7 +128,7 @@ def reorder_categories(payload: schemas.CategoryReorderRequest, current_user: Ad
     return {"message": "Categories reordered successfully"}
 
 @router.put("/categories/{category_id}", response_model=schemas.Category)
-def update_category(category_id: int, category_update: schemas.CategoryUpdate, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def update_category(category_id: int, category_update: schemas.CategoryUpdate, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     db_category = db.query(Category).filter(Category.id == category_id).first()
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -141,13 +145,13 @@ def update_category(category_id: int, category_update: schemas.CategoryUpdate, c
 
 
 @router.get("/categories/{category_id}/dependencies")
-def get_category_dependencies(category_id: int, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def get_category_dependencies(category_id: int, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     card_count = db.query(Card).filter(Card.category_id == category_id).count()
     vote_count = db.query(Vote).filter(Vote.category_id == category_id).count()
     return {"card_count": card_count, "vote_count": vote_count}
 
 @router.delete("/categories/{category_id}")
-def delete_category(category_id: int, delete_data: schemas.CategoryDelete, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def delete_category(category_id: int, delete_data: schemas.CategoryDelete, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     db_category = db.query(Category).filter(Category.id == category_id).first()
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -178,9 +182,9 @@ def delete_category(category_id: int, delete_data: schemas.CategoryDelete, curre
     db.commit()
     return {"message": "Category deleted successfully"}
 
-# Card Management
+# Card Management (Full Admin Only)
 @router.post("/cards", response_model=schemas.Card)
-def create_card(card: schemas.CardCreate, category_id: int, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def create_card(card: schemas.CardCreate, category_id: int, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     db_card = Card(**card.dict(), category_id=category_id)
     db.add(db_card)
     db.commit()
@@ -188,7 +192,7 @@ def create_card(card: schemas.CardCreate, category_id: int, current_user: Admin 
     return db_card
 
 @router.put("/cards/{card_id}", response_model=schemas.Card)
-def update_card(card_id: int, card_update: schemas.CardUpdate, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def update_card(card_id: int, card_update: schemas.CardUpdate, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     db_card = db.query(Card).filter(Card.id == card_id).first()
     if not db_card:
         raise HTTPException(status_code=404, detail="Card not found")
@@ -204,12 +208,12 @@ def update_card(card_id: int, card_update: schemas.CardUpdate, current_user: Adm
     return db_card
 
 @router.get("/cards/{card_id}/dependencies")
-def get_card_dependencies(card_id: int, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def get_card_dependencies(card_id: int, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     vote_count = db.query(Vote).filter(Vote.card_id == card_id).count()
     return {"vote_count": vote_count}
 
 @router.delete("/cards/{card_id}")
-def delete_card(card_id: int, delete_data: schemas.CardDelete, current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+def delete_card(card_id: int, delete_data: schemas.CardDelete, current_user: Admin = Depends(require_full_admin), db: Session = Depends(get_db)):
     db_card = db.query(Card).filter(Card.id == card_id).first()
     if not db_card:
         raise HTTPException(status_code=404, detail="Card not found")
@@ -228,9 +232,9 @@ def delete_card(card_id: int, delete_data: schemas.CardDelete, current_user: Adm
     db.commit()
     return {"message": "Card deleted successfully"}
 
-# File Upload
+# File Upload (Full Admin Only)
 @router.post("/upload")
-async def upload_image(file: UploadFile = File(...), current_user: Admin = Depends(get_current_admin_user)):
+async def upload_image(file: UploadFile = File(...), current_user: Admin = Depends(require_full_admin)):
     UPLOAD_DIR = "uploads"
     if not os.path.exists(UPLOAD_DIR):
         os.makedirs(UPLOAD_DIR)
@@ -244,13 +248,13 @@ async def upload_image(file: UploadFile = File(...), current_user: Admin = Depen
         
     return {"url": f"/uploads/{filename}"}
 
-# User Management
+# User Management (Full Admin Only)
 @router.get("/users")
 def get_users(
     page: int = 1, 
     limit: int = 10, 
     search: str = "", 
-    current_user: Admin = Depends(get_current_admin_user), 
+    current_user: Admin = Depends(require_full_admin), 
     db: Session = Depends(get_db)
 ):
     query = db.query(User)
@@ -284,7 +288,7 @@ def get_users(
 def delete_user(
     user_id: int, 
     delete_data: schemas.UserDelete, 
-    current_user: Admin = Depends(get_current_admin_user), 
+    current_user: Admin = Depends(require_full_admin), 
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == user_id).first()
@@ -337,12 +341,15 @@ def get_settings(
     voting_setting = db.query(Settings).filter(Settings.key == "voting_enabled").first()
     voting_enabled = voting_setting.value == "true" if voting_setting else True
     
-    return {"voting_enabled": voting_enabled}
+    poll_count_setting = db.query(Settings).filter(Settings.key == "show_poll_count").first()
+    show_poll_count = poll_count_setting.value == "true" if poll_count_setting else False
+    
+    return {"voting_enabled": voting_enabled, "show_poll_count": show_poll_count}
 
 @router.put("/settings")
 def update_settings(
     settings_data: schemas.AppSettings,
-    current_user: Admin = Depends(get_current_admin_user),
+    current_user: Admin = Depends(require_full_admin),
     db: Session = Depends(get_db)
 ):
     # Verify admin password
@@ -354,8 +361,113 @@ def update_settings(
     if not voting_setting:
         voting_setting = Settings(key="voting_enabled", value="true")
         db.add(voting_setting)
-    
     voting_setting.value = "true" if settings_data.voting_enabled else "false"
+    
+    # Update show_poll_count
+    poll_count_setting = db.query(Settings).filter(Settings.key == "show_poll_count").first()
+    if not poll_count_setting:
+        poll_count_setting = Settings(key="show_poll_count", value="false")
+        db.add(poll_count_setting)
+    poll_count_setting.value = "true" if settings_data.show_poll_count else "false"
+    
     db.commit()
     
-    return {"message": "Settings updated successfully", "voting_enabled": settings_data.voting_enabled}
+    return {
+        "message": "Settings updated successfully", 
+        "voting_enabled": settings_data.voting_enabled,
+        "show_poll_count": settings_data.show_poll_count
+    }
+
+# Admin User Management (Full Admin Only)
+@router.get("/admins", response_model=List[schemas.AdminResponse])
+def get_admins(
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    """List all view_admin users (full admins are not shown)."""
+    admins = db.query(Admin).filter(Admin.role == "view_admin").all()
+    return [{"id": a.id, "username": a.username, "role": a.role or "view_admin"} for a in admins]
+
+@router.post("/admins", response_model=schemas.AdminResponse)
+def create_admin(
+    admin_data: schemas.AdminCreate,
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    """Create a new view_admin user. Only view_admin role can be created via this API."""
+    # Check if username already exists
+    existing = db.query(Admin).filter(Admin.username == admin_data.username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    # Force role to view_admin only - full admins cannot be created via API
+    role = "view_admin"
+    
+    # Validate password
+    if len(admin_data.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    new_admin = Admin(
+        username=admin_data.username,
+        password_hash=auth.get_password_hash(admin_data.password),
+        role=role
+    )
+    db.add(new_admin)
+    db.commit()
+    db.refresh(new_admin)
+    
+    return {"id": new_admin.id, "username": new_admin.username, "role": new_admin.role}
+
+@router.put("/admins/{admin_id}", response_model=schemas.AdminResponse)
+def update_admin(
+    admin_id: int,
+    admin_data: schemas.AdminUpdate,
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    """Update an admin user (role or password reset)."""
+    admin = db.query(Admin).filter(Admin.id == admin_id).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    
+    # Update role if provided
+    if admin_data.role is not None:
+        if admin_data.role not in ["admin", "view_admin"]:
+            raise HTTPException(status_code=400, detail="Invalid role. Must be 'admin' or 'view_admin'")
+        admin.role = admin_data.role
+    
+    # Reset password if provided
+    if admin_data.new_password is not None:
+        if len(admin_data.new_password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        admin.password_hash = auth.get_password_hash(admin_data.new_password)
+    
+    db.commit()
+    db.refresh(admin)
+    
+    return {"id": admin.id, "username": admin.username, "role": admin.role or "admin"}
+
+@router.delete("/admins/{admin_id}")
+def delete_admin(
+    admin_id: int,
+    delete_data: schemas.AdminDelete,
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    """Delete an admin user."""
+    # Cannot delete self
+    if admin_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    admin = db.query(Admin).filter(Admin.id == admin_id).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    
+    # Verify current admin's password
+    if not auth.verify_password(delete_data.password, current_user.password_hash):
+        raise HTTPException(status_code=403, detail="Invalid admin password")
+    
+    db.delete(admin)
+    db.commit()
+    
+    return {"message": f"Admin '{admin.username}' deleted successfully"}

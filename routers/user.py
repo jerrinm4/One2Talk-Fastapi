@@ -15,6 +15,10 @@ router = APIRouter(
 _categories_cache = {"data": None, "timestamp": 0}
 CACHE_TTL = 60  # seconds
 
+# Cache for poll count (3 minutes TTL)
+_poll_count_cache = {"data": None, "timestamp": 0}
+POLL_COUNT_CACHE_TTL = 180  # 3 minutes
+
 @router.get("/categories")
 def get_categories(db: Session = Depends(get_db)):
     global _categories_cache
@@ -32,6 +36,35 @@ def get_categories(db: Session = Depends(get_db)):
     _categories_cache["timestamp"] = current_time
     
     return result
+
+@router.get("/poll-count")
+def get_poll_count(db: Session = Depends(get_db)):
+    """Get total poll count with 3-minute cache. Returns count only if enabled in settings."""
+    global _poll_count_cache
+    current_time = time.time()
+    
+    # Check if poll count display is enabled
+    show_setting = db.query(Settings).filter(Settings.key == "show_poll_count").first()
+    if not show_setting or show_setting.value != "true":
+        return {"enabled": False, "total_votes": 0, "total_users": 0}
+    
+    # Return cached data if still valid
+    if _poll_count_cache["data"] and (current_time - _poll_count_cache["timestamp"]) < POLL_COUNT_CACHE_TTL:
+        return {**_poll_count_cache["data"], "enabled": True}
+    
+    # Fetch from DB
+    total_votes = db.query(Vote).count()
+    total_users = db.query(User).count()
+    
+    result = {
+        "total_votes": total_votes,
+        "total_users": total_users
+    }
+    
+    _poll_count_cache["data"] = result
+    _poll_count_cache["timestamp"] = current_time
+    
+    return {**result, "enabled": True}
 
 @router.post("/vote")
 def submit_vote(vote_data: schemas.VoteCreate, db: Session = Depends(get_db)):
@@ -83,3 +116,4 @@ def submit_vote(vote_data: schemas.VoteCreate, db: Session = Depends(get_db)):
     
     db.commit()
     return {"message": "Vote submitted successfully"}
+

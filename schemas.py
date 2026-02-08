@@ -63,6 +63,14 @@ class VoteCreate(BaseModel):
 class AdminCreate(BaseModel):
     username: str
     password: str
+    role: str = "admin"  # 'admin' or 'view_admin'
+
+class AdminUpdate(BaseModel):
+    role: Optional[str] = None
+    new_password: Optional[str] = None
+
+class AdminDelete(BaseModel):
+    password: str
 
 class CategoryReorderRequest(BaseModel):
     items: List[int]
@@ -85,9 +93,17 @@ class User(UserBase):
     
     model_config = ConfigDict(from_attributes=True)
 
+class AdminResponse(BaseModel):
+    id: int
+    username: str
+    role: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+    role: str
 
 class TokenData(BaseModel):
     username: Optional[str] = None
@@ -105,4 +121,7 @@ class PasswordChange(BaseModel):
 
 class AppSettings(BaseModel):
     voting_enabled: bool = True
+    show_poll_count: bool = False
     password: str
+
+

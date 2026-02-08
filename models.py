@@ -63,6 +63,7 @@ class Admin(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password_hash = Column(String)
+    role = Column(String, default="admin")  # 'admin' or 'view_admin'
 
 class Settings(Base):
     __tablename__ = "settings"

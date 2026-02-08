@@ -4,8 +4,25 @@ const API_BASE = '/api/admin';
    Global Utilities & State
    ========================================= */
 let token = localStorage.getItem('admin_token');
+let userRole = localStorage.getItem('admin_role') || 'admin';
 let currentModalResolve = null; // For promise-based modal confirmation
 let currentModalReject = null;
+
+// Parse JWT to extract role
+function parseJwtRole(token) {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.role || 'admin';
+    } catch (e) {
+        return 'admin';
+    }
+}
+
+// Update role from token on load
+if (token) {
+    userRole = parseJwtRole(token);
+    localStorage.setItem('admin_role', userRole);
+}
 
 // Toggle Body Scroll
 const toggleBodyScroll = (lock) => {
@@ -140,12 +157,32 @@ if (modalConfirmBtn) {
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
 
+    // Apply role-based menu visibility
+    applyRoleBasedMenuVisibility();
+
     if (path.includes('/admin/login')) initLogin();
     else if (path === '/admin' || path === '/admin/') initDashboard();
     else if (path.includes('/admin/manage')) initManage();
+    else if (path.includes('/admin/admin-users')) initAdminUsers();
     else if (path.includes('/admin/users')) initUsers();
     else if (path.includes('/admin/settings')) initSettings();
 });
+
+// Apply role-based menu visibility
+function applyRoleBasedMenuVisibility() {
+    if (!token) return;
+
+    // Hide menus that require 'admin' role for 'view_admin' users
+    if (userRole === 'view_admin') {
+        document.querySelectorAll('[data-role="admin"]').forEach(el => {
+            el.classList.add('hidden');
+        });
+
+        // Also hide voting configuration in settings page
+        const votingConfig = document.getElementById('voting-config-section');
+        if (votingConfig) votingConfig.classList.add('hidden');
+    }
+}
 
 
 /* =========================================
@@ -175,6 +212,7 @@ function initLogin() {
 
             const data = await res.json();
             localStorage.setItem('admin_token', data.access_token);
+            localStorage.setItem('admin_role', data.role || 'admin');
             window.location.href = '/admin';
 
         } catch (err) {
@@ -741,6 +779,8 @@ async function initSettings() {
     const passwordForm = document.getElementById('password-form');
     const votingToggle = document.getElementById('voting-toggle');
     const votingStatus = document.getElementById('voting-status');
+    const pollCountToggle = document.getElementById('poll-count-toggle');
+    const pollCountStatus = document.getElementById('poll-count-status');
 
     if (!votingToggle) return;
 
@@ -751,6 +791,11 @@ async function initSettings() {
 
         votingToggle.checked = data.voting_enabled;
         updateVotingStatus(data.voting_enabled);
+
+        if (pollCountToggle) {
+            pollCountToggle.checked = data.show_poll_count;
+            updatePollCountStatus(data.show_poll_count);
+        }
     } catch (err) { console.error(err); }
 
     // Password Form Submit
@@ -812,7 +857,11 @@ async function initSettings() {
             if (password) {
                 const res = await fetchAuth(`${API_BASE}/settings`, {
                     method: 'PUT',
-                    body: JSON.stringify({ voting_enabled: enabled, password: password })
+                    body: JSON.stringify({
+                        voting_enabled: enabled,
+                        show_poll_count: pollCountToggle ? pollCountToggle.checked : false,
+                        password: password
+                    })
                 });
 
                 if (res.ok) {
@@ -832,6 +881,51 @@ async function initSettings() {
         }
     });
 
+    // Poll Count Toggle
+    if (pollCountToggle) {
+        pollCountToggle.addEventListener('change', async () => {
+            const enabled = pollCountToggle.checked;
+            const action = enabled ? 'show' : 'hide';
+
+            try {
+                const password = await showConfirmModal({
+                    title: `${enabled ? 'Show' : 'Hide'} Poll Count`,
+                    message: `Are you sure you want to <b>${action}</b> the poll count on the voting page?`,
+                    confirmText: `${enabled ? 'Show' : 'Hide'} Poll Count`,
+                    isDanger: !enabled,
+                    requireInput: true,
+                    inputLabel: 'Admin Password',
+                    inputType: 'password'
+                });
+
+                if (password) {
+                    const res = await fetchAuth(`${API_BASE}/settings`, {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            voting_enabled: votingToggle.checked,
+                            show_poll_count: enabled,
+                            password: password
+                        })
+                    });
+
+                    if (res.ok) {
+                        updatePollCountStatus(enabled);
+                        await showAlert(`Poll count is now ${enabled ? 'visible' : 'hidden'}!`, 'Success');
+                    } else {
+                        pollCountToggle.checked = !enabled; // Revert
+                        const err = await res.json();
+                        await showAlert(`Error: ${err.detail}`, 'Error');
+                    }
+                } else {
+                    pollCountToggle.checked = !enabled; // Revert if cancelled
+                }
+            } catch (err) {
+                pollCountToggle.checked = !enabled; // Revert
+                if (err !== 'Cancelled') console.error(err);
+            }
+        });
+    }
+
     function updateVotingStatus(enabled) {
         if (votingStatus) {
             votingStatus.innerHTML = enabled
@@ -839,4 +933,172 @@ async function initSettings() {
                 : '<span class="text-red-600 font-medium">✗ Voting is currently CLOSED</span>';
         }
     }
+
+    function updatePollCountStatus(enabled) {
+        if (pollCountStatus) {
+            pollCountStatus.innerHTML = enabled
+                ? '<span class="text-emerald-600 font-medium">✓ Poll count is visible to users</span>'
+                : '<span class="text-slate-500 font-medium">Poll count is hidden from users</span>';
+        }
+    }
 }
+
+
+/* =========================================
+   6. Admin Users Management Logic
+   ========================================= */
+async function initAdminUsers() {
+    loadAdminUsers();
+}
+
+async function loadAdminUsers() {
+    const tableBody = document.getElementById('admins-table-body');
+    if (!tableBody) return;
+
+    try {
+        const res = await fetchAuth(`${API_BASE}/admins`);
+        const admins = await res.json();
+
+        if (admins.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">No admin users found.</td></tr>`;
+        } else {
+            tableBody.innerHTML = admins.map(admin => `
+                <tr class="hover:bg-slate-50 transition-colors group">
+                    <td class="px-6 py-4 font-mono text-xs text-slate-400">#${admin.id}</td>
+                    <td class="px-6 py-4 font-medium text-slate-900">${admin.username}</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${admin.role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}">
+                            ${admin.role === 'admin' ? 'Full Admin' : 'View Only'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="openEditAdminModal(${admin.id}, '${admin.username.replace(/'/g, "\\'")}', '${admin.role}')" 
+                                class="text-slate-400 hover:text-indigo-600 transition-colors p-1 rounded hover:bg-indigo-50">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                            <button onclick="deleteAdmin(${admin.id}, '${admin.username.replace(/'/g, "\\'")}')" 
+                                class="text-slate-400 hover:text-red-600 transition-colors p-1 rounded hover:bg-red-50">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (err) { console.error(err); }
+}
+
+// Create Admin Modal
+window.openCreateAdminModal = () => {
+    document.getElementById('create-admin-modal').classList.remove('hidden');
+    toggleBodyScroll(true);
+};
+
+window.closeCreateAdminModal = () => {
+    document.getElementById('create-admin-modal').classList.add('hidden');
+    toggleBodyScroll(false);
+    document.getElementById('new-admin-username').value = '';
+    document.getElementById('new-admin-password').value = '';
+    document.getElementById('new-admin-role').value = 'admin';
+};
+
+window.submitCreateAdmin = async () => {
+    const username = document.getElementById('new-admin-username').value;
+    const password = document.getElementById('new-admin-password').value;
+    const role = document.getElementById('new-admin-role').value;
+
+    if (!username || !password) {
+        await showAlert('Please fill in all fields', 'Error');
+        return;
+    }
+
+    try {
+        const res = await fetchAuth(`${API_BASE}/admins`, {
+            method: 'POST',
+            body: JSON.stringify({ username, password, role })
+        });
+
+        if (res.ok) {
+            closeCreateAdminModal();
+            loadAdminUsers();
+            await showAlert('Admin user created successfully!', 'Success');
+        } else {
+            const err = await res.json();
+            await showAlert(`Error: ${err.detail}`, 'Error');
+        }
+    } catch (err) { console.error(err); }
+};
+
+// Edit Admin Modal
+window.openEditAdminModal = (id, username, role) => {
+    document.getElementById('edit-admin-id').value = id;
+    document.getElementById('edit-admin-username').value = username;
+    document.getElementById('edit-admin-role').value = role;
+    document.getElementById('edit-admin-password').value = '';
+    document.getElementById('edit-admin-modal').classList.remove('hidden');
+    toggleBodyScroll(true);
+};
+
+window.closeEditAdminModal = () => {
+    document.getElementById('edit-admin-modal').classList.add('hidden');
+    toggleBodyScroll(false);
+};
+
+window.submitEditAdmin = async () => {
+    const id = document.getElementById('edit-admin-id').value;
+    const role = document.getElementById('edit-admin-role').value;
+    const newPassword = document.getElementById('edit-admin-password').value;
+
+    const updateData = { role };
+    if (newPassword) {
+        updateData.new_password = newPassword;
+    }
+
+    try {
+        const res = await fetchAuth(`${API_BASE}/admins/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(updateData)
+        });
+
+        if (res.ok) {
+            closeEditAdminModal();
+            loadAdminUsers();
+            await showAlert('Admin user updated successfully!', 'Success');
+        } else {
+            const err = await res.json();
+            await showAlert(`Error: ${err.detail}`, 'Error');
+        }
+    } catch (err) { console.error(err); }
+};
+
+// Delete Admin
+window.deleteAdmin = async (id, username) => {
+    try {
+        const password = await showConfirmModal({
+            title: 'Delete Admin User',
+            message: `Are you sure you want to delete <b class="text-slate-700">${username}</b>? This action cannot be undone.`,
+            confirmText: 'Delete Admin',
+            isDanger: true,
+            requireInput: true,
+            inputLabel: 'Your Admin Password',
+            inputType: 'password'
+        });
+
+        if (password) {
+            const res = await fetchAuth(`${API_BASE}/admins/${id}`, {
+                method: 'DELETE',
+                body: JSON.stringify({ password })
+            });
+
+            if (res.ok) {
+                loadAdminUsers();
+                await showAlert('Admin user deleted successfully!', 'Success');
+            } else {
+                const err = await res.json();
+                await showAlert(`Error: ${err.detail}`, 'Error');
+            }
+        }
+    } catch (err) { if (err !== 'Cancelled') console.error(err); }
+};
+
