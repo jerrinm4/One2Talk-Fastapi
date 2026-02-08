@@ -4,16 +4,34 @@ from typing import List
 from database import get_db
 from models import Category, Card, User, Vote, Settings
 import schemas
+import time
 
 router = APIRouter(
     prefix="/api",
     tags=["user"]
 )
 
+# Simple cache for categories (1 minute TTL)
+_categories_cache = {"data": None, "timestamp": 0}
+CACHE_TTL = 60  # seconds
+
 @router.get("/categories")
 def get_categories(db: Session = Depends(get_db)):
+    global _categories_cache
+    current_time = time.time()
+    
+    # Return cached data if still valid
+    if _categories_cache["data"] and (current_time - _categories_cache["timestamp"]) < CACHE_TTL:
+        return _categories_cache["data"]
+    
+    # Fetch from DB and update cache
     categories = db.query(Category).order_by(Category.order.asc()).all()
-    return {"categories": [schemas.Category.model_validate(c) for c in categories]}
+    result = {"categories": [schemas.Category.model_validate(c) for c in categories]}
+    
+    _categories_cache["data"] = result
+    _categories_cache["timestamp"] = current_time
+    
+    return result
 
 @router.post("/vote")
 def submit_vote(vote_data: schemas.VoteCreate, db: Session = Depends(get_db)):

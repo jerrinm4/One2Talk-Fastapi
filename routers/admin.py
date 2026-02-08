@@ -6,6 +6,7 @@ from typing import List
 import shutil
 import os
 import uuid
+import time
 
 from database import get_db
 from models import User, Category, Card, Vote, Admin, Settings
@@ -16,6 +17,10 @@ router = APIRouter(
     prefix="/api/admin",
     tags=["admin"]
 )
+
+# Simple cache for dashboard stats (30 second TTL)
+_dashboard_cache = {"data": None, "timestamp": 0}
+DASHBOARD_CACHE_TTL = 30  # seconds
 
 # Login
 @router.post("/token", response_model=schemas.Token)
@@ -40,6 +45,16 @@ def get_current_admin_user(current_user: Admin = Depends(auth.get_current_admin)
 # Dashboard Stats
 @router.get("/dashboard-stats")
 def get_dashboard_stats(current_user: Admin = Depends(get_current_admin_user), db: Session = Depends(get_db)):
+    global _dashboard_cache
+    start_time = time.time()
+    current_time = start_time
+    
+    # Return cached data if still valid
+    if _dashboard_cache["data"] and (current_time - _dashboard_cache["timestamp"]) < DASHBOARD_CACHE_TTL:
+        elapsed = (time.time() - start_time) * 1000
+        print(f"[CACHE HIT] /api/admin/dashboard-stats - {elapsed:.2f}ms")
+        return _dashboard_cache["data"]
+    
     total_votes = db.query(Vote).count()
     total_users = db.query(User).count()
     total_categories = db.query(Category).count()
@@ -70,12 +85,21 @@ def get_dashboard_stats(current_user: Admin = Depends(get_current_admin_user), d
             "cards": card_stats
         })
 
-    return {
+    result = {
         "total_votes": total_votes,
         "total_users": total_users,
         "total_categories": total_categories,
         "category_stats": category_stats
     }
+    
+    # Update cache
+    _dashboard_cache["data"] = result
+    _dashboard_cache["timestamp"] = current_time
+    
+    elapsed = (time.time() - start_time) * 1000
+    print(f"[CACHE MISS] /api/admin/dashboard-stats - {elapsed:.2f}ms (fetched from DB)")
+    
+    return result
 
 # Category Management
 @router.post("/categories", response_model=schemas.Category)
