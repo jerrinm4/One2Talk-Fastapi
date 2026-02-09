@@ -49,11 +49,10 @@ function handleCardVote(card, categoryId, cardId) {
             }
 
             if (nextTarget) {
-                // Scroll to the next unvoted category
-                lenis.scrollTo(nextTarget, {
-                    offset: 0,
-                    duration: 1.2,
-                    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+                // Use native scrollIntoView for better mobile performance
+                nextTarget.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
                 });
             } else {
                 // If no more categories are missing *after this one*, 
@@ -61,10 +60,9 @@ function handleCardVote(card, categoryId, cardId) {
                 // The user logic implies forward flow, so we go to form.
                 const formSection = document.getElementById('contact-form-section');
                 if (formSection) {
-                    lenis.scrollTo(formSection, {
-                        offset: 0,
-                        duration: 1.2,
-                        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+                    formSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
                     });
                 }
             }
@@ -440,15 +438,27 @@ function initializeAnimations() {
 // LENIS SMOOTH SCROLL
 // =============================================
 
+
+// =============================================
+// LENIS SMOOTH SCROLL
+// =============================================
+
 const lenis = new Lenis({
     duration: 1.2,
-    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // exponential easing
     orientation: 'vertical',
     gestureOrientation: 'vertical',
     smoothWheel: true,
     wheelMultiplier: 1,
     touchMultiplier: 2,
+    infinite: false,
 });
+
+// Sync AOS and Lenis: Only refresh AOS when Lenis moves, but throttle it
+// AOS internally listens to window scroll, but Lenis intercepts wheel.
+// We only need to tell AOS to check positions if things get out of sync,
+// but usually AOS works fine with native scroll events which Lenis preserves unless wrapper is used.
+// However, typically with Lenis we should use requestAnimationFrame.
 
 function raf(time) {
     lenis.raf(time);
@@ -456,10 +466,10 @@ function raf(time) {
 }
 requestAnimationFrame(raf);
 
-// Update AOS on Lenis scroll
-lenis.on('scroll', () => {
-    AOS.refresh();
-});
+// OPTIMIZATION: Removed aggressive AOS.refresh() on every scroll frame.
+// AOS automatically attaches to window 'scroll'. Lenis by default scrolls the window (unless wrapper is used).
+// If animations feel stuck, we can re-enable a throttled refresh.
+// But mostly, just initializing AOS is enough.
 
 // Smooth scroll to anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
