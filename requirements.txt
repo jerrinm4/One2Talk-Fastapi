@@ -21,3 +21,6 @@ aiofiles>=23.0.0
 
 # Environment
 python-dotenv>=1.0.0
+
+# HTTP Requests (for backup Telegram integration)
+requests>=2.31.0
