@@ -294,9 +294,7 @@ def send_to_telegram(zip_path: Path, stats: dict = None):
             caption += f"\n📊 *Table Statistics:*\n"
             for table, count in stats.items():
                 caption += f"  • {table}: `{count}` rows\n"
-        
-        caption += f"\n⚠️ _Admin table excluded_"
-        
+            
         # Telegram API endpoint
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
         
