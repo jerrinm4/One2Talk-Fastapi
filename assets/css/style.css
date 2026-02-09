@@ -308,10 +308,9 @@ header .nav-btn {
     color: var(--white);
     line-height: 56px;
     letter-spacing: 5.8px;
-    padding: 20px 60px;
+    padding: 20px 50px;
     text-align: center;
     text-transform: uppercase;
-    border: 1px solid #70394c;
 }
 
 .banner-footer-logo {
@@ -351,18 +350,101 @@ header .nav-btn {
 }
 
 /* =========================================
+   ABOUT SECTION
+   ========================================= */
+.about-section {
+    background-color: var(--candy-black);
+    padding: 80px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--masterpiece), transparent);
+}
+
+.about-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--masterpiece), transparent);
+}
+
+.about-wrapper {
+    max-width: 950px;
+    margin: 0 auto;
+}
+
+.about-content {
+    text-align: center;
+    padding: 20px 0 10px;
+
+    border-radius: 12px;
+    position: relative;
+}
+
+
+
+.about-title {
+    font-family: var(--font-neue-montreal);
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 700;
+    background: var(--gradient-yellow);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.about-title::before,
+.about-title::after {
+    content: '';
+    flex: 1;
+    max-width: 150px;
+    height: 2px;
+    background: var(--gradient-yellow);
+    border-radius: 2px;
+}
+
+
+
+.about-text {
+    font-family: var(--font-inter);
+    font-size: clamp(15px, 1.5vw, 18px);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.8;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* =========================================
    POOL SECTION
    ========================================= */
 .pool-section {
     color: var(--white);
-    padding: 40px 0;
 }
 
 .pool-wrapper {
     padding: 80px 0;
 }
 
-.pool-wrapper-t:nth-child(even) {
+.pool-wrapper-t:nth-child(odd) {
     background-color: #51102554;
 }
 
@@ -545,7 +627,7 @@ header .nav-btn {
 .form-bg img {
     max-width: 100%;
     height: auto;
-    min-height: 200px;
+    max-height: 512px;
     object-fit: contain;
 }
 
@@ -1395,6 +1477,28 @@ footer .footer-wrapper .contact-info .contact-item svg path {
         padding: 60px 0 45px;
     }
 
+    .about-section {
+        padding: 50px 0;
+    }
+
+    .about-content {
+        padding: 30px 0;
+    }
+
+    .about-title {
+        font-size: 24px;
+        margin-bottom: 16px;
+    }
+
+    .about-divider {
+        margin-bottom: 24px;
+    }
+
+    .about-text {
+        font-size: 15px;
+        line-height: 1.7;
+    }
+
     .form-section {
         padding: 40px 0;
     }
@@ -1408,13 +1512,10 @@ footer .footer-wrapper .contact-info .contact-item svg path {
     .form-bg {
         flex: none;
         width: 100%;
-        padding: 60px 0;
+        max-width: 512px;
     }
 
-    .form-bg img {
-        max-height: 400x;
-    }
-
+ 
     .form-content {
         flex: none;
         width: 100%;
@@ -1489,9 +1590,30 @@ footer .footer-wrapper .contact-info .contact-item svg path {
         padding: 8px 24px;
     }
 
-    .pool-section {
-        padding: 10px 0;
+    .about-section {
+        padding: 40px 0;
     }
+
+    .about-content {
+        padding: 24px 0 12px;
+    }
+
+    .about-content::before {
+        width: 80%;
+    }
+
+
+    .about-divider {
+        width: 60px;
+        height: 2px;
+        margin-bottom: 20px;
+    }
+
+    .about-text {
+        font-size: 14px;
+        line-height: 1.65;
+    }
+
 
     .pool-wrapper {
         padding: 40px 0;
@@ -1598,7 +1720,7 @@ footer .footer-wrapper .contact-info .contact-item svg path {
    POLL COUNT SECTION
    ========================================= */
 .poll-count-section {
-    padding: 40px 0;
+    padding: 40px 0 0;
 }
 
 .poll-count-card {
