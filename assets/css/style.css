@@ -209,7 +209,7 @@ header .nav-logo {
 header .nav-text {
     font-family: var(--font-neue-montreal);
     font-size: 20px;
-    font-weight: 400;
+    font-weight: 700;
     letter-spacing: 6.8px;
     background: var(--gradient-yellow);
     -webkit-background-clip: text;
@@ -328,6 +328,7 @@ header .nav-btn {
 
 .banner-footer-logo img {
     min-width: 200px;
+    max-width: 200px;
 }
 
 
