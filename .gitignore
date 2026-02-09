@@ -91,3 +91,4 @@ Thumbs.db
 .agent/
 
 nginx/nginx.conf
+nginx/nginx.local.conf

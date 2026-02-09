@@ -270,6 +270,10 @@ header .nav-btn {
     background-clip: text;
 }
 
+.banner-title-img {
+    display: none;
+}
+
 .sm-banner-title {
     font-family: var(--font-inter);
     font-size: 36px;
@@ -1346,10 +1350,19 @@ footer .footer-wrapper .contact-info .contact-item svg path {
         display: block;
     }
 
+
     .banner .banner-text {
         padding: 60px 0 17px;
         align-items: center;
         text-align: center;
+    }
+
+    .banner .banner-text h1 {
+        display: none;
+    }
+
+    .banner-title-img {
+        display: block;
     }
 
     .sm-banner-title {
