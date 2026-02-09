@@ -84,8 +84,8 @@ def get_dashboard_stats(current_user: Admin = Depends(get_current_admin_user), d
                 "percentage": round((card_votes / cat_total_votes * 100), 1) if cat_total_votes > 0 else 0 
             })
         
-        # Sort cards by custom order
-        card_stats.sort(key=lambda x: x["order"])
+        # Sort cards by votes (descending order - highest votes first)
+        card_stats.sort(key=lambda x: x["votes"], reverse=True)
         
         category_stats.append({
             "id": cat.id,
