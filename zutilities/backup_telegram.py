@@ -22,6 +22,7 @@ import time
 import logging
 import shutil
 import zipfile
+import hashlib
 from datetime import datetime
 from pathlib import Path
 
@@ -54,6 +55,7 @@ POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'one2talk_secure_password')
 POSTGRES_DB = os.getenv('POSTGRES_DB', 'one2talk_db')
 DATABASE_URL = os.getenv('DATABASE_URL', '')
 BACKUP_INTERVAL = int(os.getenv('BACKUP_INTERVAL', 3600))
+BACKUP_RETENTION_COUNT = 10
 
 # Determine if running inside Docker
 RUNNING_IN_DOCKER = os.path.exists('/.dockerenv') or os.getenv('DATABASE_URL', '').startswith('postgresql://')
@@ -66,6 +68,7 @@ else:
     
 BACKUP_DIR = PROJECT_ROOT / 'backups'
 UPLOADS_DIR = PROJECT_ROOT / 'uploads'
+HASH_FILE = BACKUP_DIR / '.last_backup_hash'
 
 # Database host - 'db' when in Docker, 'localhost' otherwise
 DB_HOST = 'db' if RUNNING_IN_DOCKER else 'localhost'
@@ -160,12 +163,90 @@ def create_postgres_backup(backup_sql_path: Path):
         return False
 
 
+def calculate_backup_hash(sql_path: Path):
+    """
+    Calculate a hash of the current backup state (SQL content + Uploads files).
+    Excludes SQL comments (like dump timestamps) to avoid false positives.
+    """
+    sha256 = hashlib.sha256()
+    
+    # Hash SQL content (ignoring comments)
+    if sql_path.exists():
+        try:
+            with open(sql_path, 'rb') as f:
+                for line in f:
+                    if not line.strip().startswith(b'--'):
+                        sha256.update(line)
+        except Exception as e:
+            logger.error(f"Error hashing SQL file: {e}")
+
+    # Hash uploads directory structure and modification times
+    if UPLOADS_DIR.exists():
+        # Get all files, sort them to ensure consistent order
+        files = sorted([f for f in UPLOADS_DIR.rglob('*') if f.is_file()])
+        for f in files:
+            try:
+                # Hash filename relative to uploads
+                rel_path = f.relative_to(UPLOADS_DIR)
+                sha256.update(str(rel_path).encode('utf-8'))
+                # Hash modification time and size
+                stat = f.stat()
+                sha256.update(str(stat.st_mtime).encode('utf-8'))
+                sha256.update(str(stat.st_size).encode('utf-8'))
+            except Exception as e:
+                logger.error(f"Error hashing file {f}: {e}")
+    
+    return sha256.hexdigest()
+
+
+def should_backup(current_hash):
+    """Check if the current backup hash is different from the last one."""
+    if not HASH_FILE.exists():
+        return True
+    
+    try:
+        with open(HASH_FILE, 'r') as f:
+            last_hash = f.read().strip()
+        return current_hash != last_hash
+    except Exception:
+        return True
+
+
+def save_backup_hash(new_hash):
+    """Save the new backup hash."""
+    try:
+        with open(HASH_FILE, 'w') as f:
+            f.write(new_hash)
+    except Exception as e:
+        logger.error(f"Failed to save backup hash: {e}")
+
+
+def cleanup_old_backups():
+    """Keep only the last BACKUP_RETENTION_COUNT ZIP backups."""
+    try:
+        backups = sorted(
+            [f for f in BACKUP_DIR.glob('backup_*.zip')],
+            key=lambda x: x.stat().st_mtime,
+            reverse=True
+        )
+        
+        if len(backups) > BACKUP_RETENTION_COUNT:
+            logger.info(f"Cleaning up old backups (keeping last {BACKUP_RETENTION_COUNT})...")
+            for backup in backups[BACKUP_RETENTION_COUNT:]:
+                backup.unlink()
+                logger.info(f"Deleted old backup: {backup.name}")
+    except Exception as e:
+        logger.error(f"Error cleaning up old backups: {e}")
+
+
 def create_zip_backup():
     """
     Create a ZIP backup containing the SQL dump and uploads folder.
+    CHECKS FOR CHANGES FIRST.
     
     Returns:
-        tuple: (zip_path, success)
+        tuple: (zip_path, success, skipped)
+               skipped is True if no changes were detected
     """
     timestamp = get_timestamp()
     backup_name = f"backup_{POSTGRES_DB}_{timestamp}"
@@ -181,10 +262,17 @@ def create_zip_backup():
     try:
         # Step 1: Create SQL backup
         if not create_postgres_backup(sql_path):
-            return None, False
+            return None, False, False
         
-        # Step 2: Create ZIP archive
-        logger.info(f"Creating ZIP archive: {zip_filename}")
+        # Step 2: Calculate Hash and Check for Changes
+        current_hash = calculate_backup_hash(sql_path)
+        if not should_backup(current_hash):
+            logger.info("No changes detected since last backup. Skipping.")
+            sql_path.unlink() # Cleanup temp file
+            return None, True, True
+        
+        # Step 3: Create ZIP archive
+        logger.info(f"Changes detected. Creating ZIP archive: {zip_filename}")
         
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             # Add SQL file
@@ -206,10 +294,13 @@ def create_zip_backup():
         # Clean up temp SQL file
         sql_path.unlink()
         
+        # Save the new hash
+        save_backup_hash(current_hash)
+        
         zip_size = zip_path.stat().st_size
         logger.info(f"ZIP backup created: {zip_path} ({zip_size / 1024:.2f} KB)")
         
-        return zip_path, True
+        return zip_path, True, False
         
     except Exception as e:
         logger.error(f"ZIP creation failed: {str(e)}")
@@ -218,7 +309,7 @@ def create_zip_backup():
             sql_path.unlink()
         if zip_path.exists():
             zip_path.unlink()
-        return None, False
+        return None, False, False
 
 
 def get_database_stats():
@@ -343,8 +434,12 @@ def run_backup():
     
     ensure_backup_dir()
     
-    # Create ZIP backup (SQL + uploads)
-    zip_path, success = create_zip_backup()
+    # Create ZIP backup (SQL + uploads) - Now checks for changes
+    zip_path, success, skipped = create_zip_backup()
+    
+    if skipped:
+        logger.info("Backup skipped due to no changes.")
+        return True
     
     if not success or not zip_path:
         logger.error("❌ Backup creation failed")
@@ -358,6 +453,8 @@ def run_backup():
     
     if telegram_success:
         logger.info("✅ Backup completed successfully")
+        # Cleanup old backups only on successful new backup
+        cleanup_old_backups()
     else:
         logger.warning("⚠️ Backup created but Telegram delivery failed")
     
