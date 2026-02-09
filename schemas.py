@@ -59,6 +59,7 @@ class VoteItem(BaseModel):
 class VoteCreate(BaseModel):
     user: UserBase
     votes: List[VoteItem]
+    turnstile_token: str  # Cloudflare Turnstile verification token
 
 class AdminCreate(BaseModel):
     username: str

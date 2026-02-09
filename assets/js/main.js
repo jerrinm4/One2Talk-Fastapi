@@ -213,6 +213,16 @@ function initContactForm() {
             return;
         }
 
+        // Turnstile Token Validation
+        const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+        const turnstileToken = turnstileResponse ? turnstileResponse.value : '';
+        if (!turnstileToken) {
+            showPopup(false, 'Verification Required', 'Please complete the security check.');
+            submitBtn.classList.remove('submitting');
+            submitBtn.textContent = 'Submit';
+            return;
+        }
+
         try {
             const response = await fetch('/api/vote', {
                 method: 'POST',
@@ -221,7 +231,8 @@ function initContactForm() {
                 },
                 body: JSON.stringify({
                     user: { name, phone, email },
-                    votes: votes
+                    votes: votes,
+                    turnstile_token: turnstileToken
                 })
             });
 

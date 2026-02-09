@@ -5,6 +5,8 @@ from database import get_db
 from models import Category, Card, User, Vote, Settings
 import schemas
 import time
+import os
+import httpx
 
 router = APIRouter(
     prefix="/api",
@@ -75,6 +77,24 @@ def submit_vote(vote_data: schemas.VoteCreate, db: Session = Depends(get_db)):
     voting_setting = db.query(Settings).filter(Settings.key == "voting_enabled").first()
     if voting_setting and voting_setting.value == "false":
         raise HTTPException(status_code=403, detail="Voting is currently closed. Please try again later.")
+
+    # 0.5 Verify Turnstile token
+    turnstile_secret = os.getenv("TURNSTILE_SECRET_KEY", "")
+    if turnstile_secret:
+        try:
+            response = httpx.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={
+                    "secret": turnstile_secret,
+                    "response": vote_data.turnstile_token
+                },
+                timeout=10.0
+            )
+            result = response.json()
+            if not result.get("success"):
+                raise HTTPException(status_code=400, detail="Security verification failed. Please try again.")
+        except httpx.RequestError:
+            raise HTTPException(status_code=500, detail="Could not verify security check. Please try again.")
 
     # 1. Validate that all categories have been voted on
     all_categories = db.query(Category).all()
