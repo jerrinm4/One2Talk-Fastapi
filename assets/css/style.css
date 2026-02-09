@@ -944,6 +944,43 @@ footer .footer-wrapper .social-links a svg path {
     transition: fill 0.3s ease;
 }
 
+footer .footer-wrapper .contact-info {
+    display: flex;
+    gap: 40px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+footer .footer-wrapper .contact-info .contact-item {
+    font-family: var(--font-neue-montreal);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.3s ease;
+}
+
+footer .footer-wrapper .contact-info .contact-item:hover {
+    color: var(--aureolin);
+}
+
+footer .footer-wrapper .contact-info .contact-item:hover svg path {
+    fill: var(--aureolin);
+}
+
+footer .footer-wrapper .contact-info .contact-item svg {
+    height: 24px;
+    width: 24px;
+}
+
+footer .footer-wrapper .contact-info .contact-item svg path {
+    fill: var(--white);
+    transition: fill 0.3s ease;
+}
+
 /* =========================================
    ANIMATIONS
    ========================================= */
@@ -1493,6 +1530,21 @@ footer .footer-wrapper .social-links a svg path {
 
     footer .footer-wrapper .social-links a svg {
         height: 24px;
+    }
+
+    footer .footer-wrapper .contact-info {
+        gap: 20px;
+        margin-top: 20px;
+        justify-content: center;
+    }
+
+    footer .footer-wrapper .contact-info .contact-item {
+        font-size: 14px;
+    }
+
+    footer .footer-wrapper .contact-info .contact-item svg {
+        height: 18px;
+        width: 18px;
     }
 }
 
