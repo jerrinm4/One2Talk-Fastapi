@@ -544,7 +544,7 @@ header .nav-btn {
 .form-bg img {
     max-width: 100%;
     height: auto;
-    max-height: 512px;
+    min-height: 200px;
     object-fit: contain;
 }
 
@@ -1407,6 +1407,7 @@ footer .footer-wrapper .contact-info .contact-item svg path {
     .form-bg {
         flex: none;
         width: 100%;
+        padding: 60px 0;
     }
 
     .form-bg img {

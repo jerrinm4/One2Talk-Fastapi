@@ -46,7 +46,7 @@ def get_poll_count(db: Session = Depends(get_db)):
     # Check if poll count display is enabled
     show_setting = db.query(Settings).filter(Settings.key == "show_poll_count").first()
     if not show_setting or show_setting.value != "true":
-        return {"enabled": False, "total_votes": 0, "total_users": 0}
+        return {"enabled": False, "total_votes": 0}
     
     # Return cached data if still valid
     if _poll_count_cache["data"] and (current_time - _poll_count_cache["timestamp"]) < POLL_COUNT_CACHE_TTL:
@@ -56,8 +56,11 @@ def get_poll_count(db: Session = Depends(get_db)):
     total_votes = db.query(Vote).count()
     total_users = db.query(User).count()
     
+    # Minimum display count of 1000
+    display_votes = max(total_votes, 1000)
+    
     result = {
-        "total_votes": total_votes,
+        "total_votes": display_votes,
         "total_users": total_users
     }
     
@@ -82,7 +85,16 @@ def submit_vote(vote_data: schemas.VoteCreate, db: Session = Depends(get_db)):
     if missing_cats:
         raise HTTPException(status_code=400, detail="Please vote in all categories before submitting.")
 
-    # 2. Check if user already exists (Strict One-Time Vote)
+    # 2. Validate email domain (only allowed domains)
+    ALLOWED_EMAIL_DOMAINS = ['gmail.com', 'outlook.com', 'yahoo.com']
+    email_domain = vote_data.user.email.split('@')[-1].lower()
+    if email_domain not in ALLOWED_EMAIL_DOMAINS:
+        raise HTTPException(
+            status_code=400, 
+            detail="Please use a valid email address from Gmail, Outlook, or Yahoo."
+        )
+
+    # 3. Check if user already exists (Strict One-Time Vote)
     existing_user = db.query(User).filter(
         (User.email == vote_data.user.email) | 
         (User.phone == vote_data.user.phone)

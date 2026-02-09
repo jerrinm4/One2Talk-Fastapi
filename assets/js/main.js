@@ -190,12 +190,26 @@ function initContactForm() {
         // Client-Side Validation
         if (!/^\d{10,15}$/.test(phone)) {
             showPopup(false, 'Invalid Phone Number', 'Please enter a valid phone number (10-15 digits only).');
+            submitBtn.classList.remove('submitting');
+            submitBtn.textContent = 'Submit';
             return;
         }
 
         // Basic Email Regex (Constraints also handled by input type="email")
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             showPopup(false, 'Invalid Email', 'Please enter a valid email address.');
+            submitBtn.classList.remove('submitting');
+            submitBtn.textContent = 'Submit';
+            return;
+        }
+
+        // Email Domain Validation (only Gmail, Outlook, Yahoo)
+        const allowedDomains = ['gmail.com', 'outlook.com', 'yahoo.com'];
+        const emailDomain = email.split('@')[1]?.toLowerCase();
+        if (!emailDomain || !allowedDomains.includes(emailDomain)) {
+            showPopup(false, 'Invalid Email Provider', 'Please use an email from Gmail, Outlook, or Yahoo.');
+            submitBtn.classList.remove('submitting');
+            submitBtn.textContent = 'Submit';
             return;
         }
 
