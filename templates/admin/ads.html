@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Ads Management - Admin Dashboard{% endblock %}
+{% block header_title %}Ads Management{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8 flex-wrap gap-3">
+    <div class="flex items-center gap-2">
+        <button onclick="toggleAllAds(true)"
+            class="flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 text-sm">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Enable All
+        </button>
+        <button onclick="toggleAllAds(false)"
+            class="flex items-center px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-full font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 text-sm">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
+                </path>
+            </svg>
+            Disable All
+        </button>
+    </div>
+    <button onclick="openAdModal()"
+        class="flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-semibold shadow-lg hover:shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Add Ad
+    </button>
+</div>
+
+<div class="space-y-3" id="ads-container">
+    <div class="text-center text-slate-400 py-12">Loading ads...</div>
+</div>
+
+<!-- Add/Edit Ad Modal -->
+<div id="ad-modal" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 hidden">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeAdModal()"></div>
+    <div
+        class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl z-10 p-4 sm:p-6 animate-fade-in-up max-h-[95vh] overflow-y-auto custom-scrollbar">
+        <h3 id="ad-modal-title" class="text-lg sm:text-xl font-bold text-slate-900 mb-3 sm:mb-4">Add Ad</h3>
+        <input type="hidden" id="edit-ad-id">
+        <div class="space-y-3 sm:space-y-4">
+            <div>
+                <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Link URL</label>
+                <input type="url" id="ad-link" placeholder="https://myg.in/"
+                    class="w-full rounded-lg border-slate-200 focus:ring-2 focus:ring-indigo-500 p-2 sm:p-2.5 border text-sm">
+            </div>
+            <div>
+                <label class="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Ad Image</label>
+                <label for="ad-image-file"
+                    class="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-colors">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                    <span class="text-sm text-slate-500">Tap to select image</span>
+                </label>
+                <input type="file" id="ad-image-file" accept="image/*" class="hidden">
+                <div id="ad-preview-container" class="mt-3 hidden">
+                    <div class="flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                        <div
+                            class="relative w-20 h-12 flex-shrink-0 rounded-lg overflow-hidden border border-slate-300">
+                            <img id="ad-preview" class="w-full h-full object-contain">
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <p class="text-xs text-slate-600 font-medium truncate">Image ready</p>
+                        </div>
+                        <button onclick="clearAdImage()"
+                            class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4 sm:mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
+            <button onclick="closeAdModal()"
+                class="w-full sm:w-auto px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm">Cancel</button>
+            <button onclick="submitAd()" id="submit-ad-btn"
+                class="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm">Add
+                Ad</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+{% endblock %}

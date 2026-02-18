@@ -123,3 +123,8 @@ async def read_admin_admin_users(request: Request):
 async def read_admin_settings(request: Request):
     return templates.TemplateResponse("admin/settings.html", {"request": request, "active_page": "settings"})
 
+# Serve Admin Ads Page
+@app.get("/admin/ads", response_class=HTMLResponse)
+async def read_admin_ads(request: Request):
+    return templates.TemplateResponse("admin/ads.html", {"request": request, "active_page": "ads"})
+

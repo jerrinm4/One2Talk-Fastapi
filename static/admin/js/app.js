@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (path.includes('/admin/login')) initLogin();
     else if (path === '/admin' || path === '/admin/') initDashboard();
     else if (path.includes('/admin/manage')) initManage();
+    else if (path.includes('/admin/ads')) initAds();
     else if (path.includes('/admin/admin-users')) initAdminUsers();
     else if (path.includes('/admin/users')) initUsers();
     else if (path.includes('/admin/settings')) initSettings();
@@ -1043,6 +1044,7 @@ async function initSettings() {
     const pollCountToggle = document.getElementById('poll-count-toggle');
     const pollCountStatus = document.getElementById('poll-count-status');
 
+
     if (!votingToggle) return;
 
     // Load current settings
@@ -1362,4 +1364,259 @@ window.deleteAdmin = async (id, username) => {
         }
     } catch (err) { if (err !== 'Cancelled') console.error(err); }
 };
+
+
+/* =========================================
+   7. Ads Management Logic
+   ========================================= */
+let adSortable = null;
+let adImageFile = null;
+
+async function initAds() {
+    window.openAdModal = openAdModal;
+    window.closeAdModal = closeAdModal;
+    window.submitAd = submitAd;
+    window.deleteAd = deleteAd;
+    window.toggleAd = toggleAd;
+    window.toggleAllAds = toggleAllAds;
+    window.clearAdImage = clearAdImage;
+
+    // Set up file input
+    const fileInput = document.getElementById('ad-image-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                adImageFile = file;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    document.getElementById('ad-preview').src = ev.target.result;
+                    document.getElementById('ad-preview-container').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    loadAds();
+}
+
+async function loadAds() {
+    const container = document.getElementById('ads-container');
+    if (!container) return;
+
+    try {
+        const res = await fetchAuth(`${API_BASE}/ads`);
+        const ads = await res.json();
+        renderAds(container, ads);
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<div class="text-center text-red-400 py-12">Failed to load ads</div>';
+    }
+}
+
+function renderAds(container, ads) {
+    if (ads.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-16 bg-white rounded-xl border border-slate-200">
+                <svg class="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                </svg>
+                <p class="text-slate-400 text-sm mb-2">No ads yet</p>
+                <button onclick="openAdModal()" class="text-indigo-600 text-sm font-medium hover:underline">Add your first ad</button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = ads.map(ad => `
+        <div class="group bg-white rounded-xl border border-slate-200 hover:border-indigo-200 hover:shadow-md transition-all p-4 flex items-center gap-4" data-id="${ad.id}">
+            <div class="drag-handle p-2 text-slate-300 hover:text-slate-600 cursor-move rounded-lg hover:bg-slate-50 transition-colors flex-shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                </svg>
+            </div>
+            <div class="w-24 h-14 sm:w-32 sm:h-16 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-50">
+                <img src="${ad.image_url}" class="w-full h-full object-contain" alt="Ad">
+            </div>
+            <div class="flex-grow min-w-0">
+                <a href="${ad.link}" target="_blank" class="text-sm text-indigo-600 hover:underline truncate block" title="${ad.link}">${ad.link}</a>
+                <p class="text-xs text-slate-400 mt-0.5">Order: ${ad.order}</p>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" ${ad.enabled ? 'checked' : ''}
+                        onchange="toggleAd(${ad.id}, this.checked)">
+                    <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+                <button onclick="openEditAdModal(${ad.id}, '${ad.image_url.replace(/'/g, "\\'")}', '${ad.link.replace(/'/g, "\\'")}')" 
+                    class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </button>
+                <button onclick="deleteAd(${ad.id})" 
+                    class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
+        </div>
+    `).join('');
+
+    // Init SortableJS for ads
+    if (window.Sortable) {
+        if (adSortable) adSortable.destroy();
+        adSortable = new Sortable(container, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'opacity-50',
+            onEnd: async function () {
+                const order = [];
+                container.querySelectorAll('[data-id]').forEach(el => {
+                    order.push(parseInt(el.dataset.id));
+                });
+                try {
+                    await fetchAuth(`${API_BASE}/ads/reorder`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ items: order })
+                    });
+                } catch (err) { console.error('Ad reorder failed', err); }
+            }
+        });
+    }
+}
+
+function openAdModal() {
+    document.getElementById('ad-modal-title').textContent = 'Add Ad';
+    document.getElementById('submit-ad-btn').textContent = 'Add Ad';
+    document.getElementById('edit-ad-id').value = '';
+    document.getElementById('ad-link').value = 'https://myg.in/';
+    document.getElementById('ad-preview-container').classList.add('hidden');
+    document.getElementById('ad-image-file').value = '';
+    adImageFile = null;
+    document.getElementById('ad-modal').classList.remove('hidden');
+    toggleBodyScroll(true);
+}
+
+window.openEditAdModal = (id, imageUrl, link) => {
+    document.getElementById('ad-modal-title').textContent = 'Edit Ad';
+    document.getElementById('submit-ad-btn').textContent = 'Save Changes';
+    document.getElementById('edit-ad-id').value = id;
+    document.getElementById('ad-link').value = link;
+    // Show current image
+    document.getElementById('ad-preview').src = imageUrl;
+    document.getElementById('ad-preview-container').classList.remove('hidden');
+    document.getElementById('ad-image-file').value = '';
+    adImageFile = null;
+    document.getElementById('ad-modal').classList.remove('hidden');
+    toggleBodyScroll(true);
+};
+
+function closeAdModal() {
+    document.getElementById('ad-modal').classList.add('hidden');
+    toggleBodyScroll(false);
+    adImageFile = null;
+}
+
+function clearAdImage() {
+    document.getElementById('ad-preview-container').classList.add('hidden');
+    document.getElementById('ad-image-file').value = '';
+    adImageFile = null;
+}
+
+async function submitAd() {
+    const editId = document.getElementById('edit-ad-id').value;
+    const link = document.getElementById('ad-link').value || 'https://myg.in/';
+    const isEdit = !!editId;
+
+    try {
+        let imageUrl = null;
+
+        // Upload image if new file selected
+        if (adImageFile) {
+            const formData = new FormData();
+            formData.append('file', adImageFile, adImageFile.name);
+            const upRes = await fetchAuth(`${API_BASE}/upload`, { method: 'POST', body: formData });
+            const upData = await upRes.json();
+            imageUrl = upData.url;
+        }
+
+        if (isEdit) {
+            // Update existing ad
+            const updateBody = { link };
+            if (imageUrl) updateBody.image_url = imageUrl;
+            const res = await fetchAuth(`${API_BASE}/ads/${editId}`, {
+                method: 'PUT',
+                body: JSON.stringify(updateBody)
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                await showAlert(`Error: ${err.detail}`, 'Error');
+                return;
+            }
+        } else {
+            // Create new ad
+            if (!imageUrl) {
+                await showAlert('Please select an image for the ad.', 'Required');
+                return;
+            }
+            const res = await fetchAuth(`${API_BASE}/ads`, {
+                method: 'POST',
+                body: JSON.stringify({ image_url: imageUrl, link })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                await showAlert(`Error: ${err.detail}`, 'Error');
+                return;
+            }
+        }
+
+        closeAdModal();
+        loadAds();
+    } catch (err) {
+        console.error(err);
+        await showAlert('Failed to save ad', 'Error');
+    }
+}
+
+async function deleteAd(id) {
+    try {
+        const confirmed = await showConfirmModal({
+            title: 'Delete Ad',
+            message: 'Are you sure you want to delete this ad?',
+            confirmText: 'Delete',
+            isDanger: true
+        });
+
+        if (confirmed) {
+            const res = await fetchAuth(`${API_BASE}/ads/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                loadAds();
+            } else {
+                const err = await res.json();
+                await showAlert(`Error: ${err.detail}`, 'Error');
+            }
+        }
+    } catch (err) { if (err !== 'Cancelled') console.error(err); }
+}
+
+async function toggleAd(id, enabled) {
+    try {
+        await fetchAuth(`${API_BASE}/ads/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ enabled })
+        });
+    } catch (err) {
+        console.error(err);
+        loadAds(); // Reload to revert on error
+    }
+}
+
+async function toggleAllAds(enabled) {
+    try {
+        const res = await fetchAuth(`${API_BASE}/ads/toggle-all?enabled=${enabled}`, { method: 'PUT' });
+        if (res.ok) {
+            loadAds();
+        }
+    } catch (err) { console.error(err); }
+}
 

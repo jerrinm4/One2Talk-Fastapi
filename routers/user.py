@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from models import Category, Card, User, Vote, Settings
+from models import Category, Card, User, Vote, Settings, Ad
 import schemas
 import time
 import os
@@ -20,6 +20,13 @@ CACHE_TTL = 60  # seconds
 # Cache for poll count (3 minutes TTL)
 _poll_count_cache = {"data": None, "timestamp": 0}
 POLL_COUNT_CACHE_TTL = 180  # 3 minutes
+
+@router.get("/ads")
+def get_ads(db: Session = Depends(get_db)):
+    """Get all enabled ads from database, ordered by position."""
+    ads = db.query(Ad).filter(Ad.enabled == True).order_by(Ad.order.asc()).all()
+    return {"ads": [{"image_url": a.image_url, "link": a.link} for a in ads]}
+
 
 @router.get("/categories")
 def get_categories(db: Session = Depends(get_db)):

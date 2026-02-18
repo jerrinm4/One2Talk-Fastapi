@@ -76,6 +76,18 @@ class AdminDelete(BaseModel):
 class CategoryReorderRequest(BaseModel):
     items: List[int]
 
+class AdCreate(BaseModel):
+    image_url: str
+    link: str = "https://myg.in/"
+
+class AdUpdate(BaseModel):
+    image_url: Optional[str] = None
+    link: Optional[str] = None
+    enabled: Optional[bool] = None
+
+class AdReorderRequest(BaseModel):
+    items: List[int]
+
 # Response Schemas
 class Card(CardBase):
     id: int
@@ -98,6 +110,15 @@ class AdminResponse(BaseModel):
     id: int
     username: str
     role: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class AdResponse(BaseModel):
+    id: int
+    image_url: str
+    link: str
+    order: int
+    enabled: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -124,5 +145,6 @@ class AppSettings(BaseModel):
     voting_enabled: bool = True
     show_poll_count: bool = False
     password: str
+
 
 

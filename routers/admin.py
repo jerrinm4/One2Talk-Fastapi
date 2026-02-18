@@ -12,7 +12,7 @@ import time
 import hashlib
 
 from database import get_db
-from models import User, Category, Card, Vote, Admin, Settings
+from models import User, Category, Card, Vote, Admin, Settings, Ad
 import schemas
 import auth
 
@@ -416,6 +416,87 @@ def update_settings(
         "voting_enabled": settings_data.voting_enabled,
         "show_poll_count": settings_data.show_poll_count
     }
+
+# Ad Management (Full Admin Only)
+@router.get("/ads")
+def get_ads(
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    ads = db.query(Ad).order_by(Ad.order.asc()).all()
+    return [{"id": a.id, "image_url": a.image_url, "link": a.link, "order": a.order, "enabled": a.enabled} for a in ads]
+
+@router.post("/ads")
+def create_ad(
+    ad_data: schemas.AdCreate,
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    max_order = db.query(func.max(Ad.order)).scalar()
+    next_order = (max_order or 0) + 1
+    
+    new_ad = Ad(image_url=ad_data.image_url, link=ad_data.link, order=next_order)
+    db.add(new_ad)
+    db.commit()
+    db.refresh(new_ad)
+    return {"id": new_ad.id, "image_url": new_ad.image_url, "link": new_ad.link, "order": new_ad.order, "enabled": new_ad.enabled}
+
+@router.put("/ads/reorder")
+def reorder_ads(
+    payload: schemas.AdReorderRequest,
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    for index, ad_id in enumerate(payload.items):
+        db.query(Ad).filter(Ad.id == ad_id).update({"order": index})
+    db.commit()
+    return {"message": "Ads reordered successfully"}
+
+@router.put("/ads/toggle-all")
+def toggle_all_ads(
+    enabled: bool,
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    db.query(Ad).update({"enabled": enabled})
+    db.commit()
+    return {"message": f"All ads {'enabled' if enabled else 'disabled'}"}
+
+@router.put("/ads/{ad_id}")
+def update_ad(
+    ad_id: int,
+    ad_data: schemas.AdUpdate,
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    ad = db.query(Ad).filter(Ad.id == ad_id).first()
+    if not ad:
+        raise HTTPException(status_code=404, detail="Ad not found")
+    
+    if ad_data.image_url is not None:
+        ad.image_url = ad_data.image_url
+    if ad_data.link is not None:
+        ad.link = ad_data.link
+    if ad_data.enabled is not None:
+        ad.enabled = ad_data.enabled
+    
+    db.commit()
+    db.refresh(ad)
+    return {"id": ad.id, "image_url": ad.image_url, "link": ad.link, "order": ad.order, "enabled": ad.enabled}
+
+@router.delete("/ads/{ad_id}")
+def delete_ad(
+    ad_id: int,
+    current_user: Admin = Depends(require_full_admin),
+    db: Session = Depends(get_db)
+):
+    ad = db.query(Ad).filter(Ad.id == ad_id).first()
+    if not ad:
+        raise HTTPException(status_code=404, detail="Ad not found")
+    
+    db.delete(ad)
+    db.commit()
+    return {"message": "Ad deleted successfully"}
 
 # Admin User Management (Full Admin Only)
 @router.get("/admins", response_model=List[schemas.AdminResponse])

@@ -48,22 +48,26 @@ function handleCardVote(card, categoryId, cardId) {
                 }
             }
 
+            // Get actual ad banner height for scroll offset
+            const adBanner = document.querySelector('.myg-ad-banner');
+            const adHeight = adBanner ? adBanner.offsetHeight : 0;
+
+            const scrollToElement = (el, offset) => {
+                // Stop Lenis to prevent it fighting with programmatic scroll
+                lenis.stop();
+                const y = el.getBoundingClientRect().top + window.scrollY + offset;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+                // Restart Lenis after scroll settles
+                setTimeout(() => lenis.start(), 1200);
+            };
+
             if (nextTarget) {
-                // Use native scrollIntoView for better mobile performance
-                nextTarget.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+                scrollToElement(nextTarget, -adHeight);
             } else {
-                // If no more categories are missing *after this one*, 
-                // check if there are any *before* (edge case) or just go to form.
-                // The user logic implies forward flow, so we go to form.
+                // All categories voted — scroll to form
                 const formSection = document.getElementById('contact-form-section');
                 if (formSection) {
-                    formSection.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    scrollToElement(formSection, -adHeight);
                 }
             }
         }, 300);
@@ -327,7 +331,7 @@ function renderCategory(category, index) {
     }).join('');
 
     return `
-        <div class="pool-wrapper-t" data-category-id="${category.id}">
+        <div class="pool-wrapper-t${index % 2 === 0 ? ' pool-wrapper-odd' : ''}" data-category-id="${category.id}">
             <div class="container">
                 <div class="pool-wrapper">
                     <div class="pool-header">
@@ -344,20 +348,67 @@ function renderCategory(category, index) {
     `;
 }
 
-// Fetch and render all categories
+// Render an ad banner
+function renderAdBanner(ad) {
+    return `
+        <div class="myg-ad-banner" data-aos="fade-up" data-aos-duration="600">
+            <a href="${ad.link || 'https://myg.in/'}" target="_blank" rel="noopener noreferrer">
+                <img src="${ad.image_url}" alt="MyG Ad" loading="lazy" crossorigin="anonymous">
+            </a>
+        </div>
+    `;
+}
+
+// Extract left & right edge colors from ad images and apply as background
+function applyAdEdgeColors() {
+    document.querySelectorAll('.myg-ad-banner img').forEach(img => {
+        const apply = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                ctx.drawImage(img, 0, 0);
+
+                // Sample left edge (x=0, middle y)
+                const midY = Math.floor(canvas.height / 2);
+                const leftPixel = ctx.getImageData(0, midY, 1, 1).data;
+                const leftColor = `rgb(${leftPixel[0]}, ${leftPixel[1]}, ${leftPixel[2]})`;
+
+                // Sample right edge (x=width-1, middle y)
+                const rightPixel = ctx.getImageData(canvas.width - 1, midY, 1, 1).data;
+                const rightColor = `rgb(${rightPixel[0]}, ${rightPixel[1]}, ${rightPixel[2]})`;
+
+                // Apply as solid split background on the banner container
+                const banner = img.closest('.myg-ad-banner');
+                banner.style.background = `linear-gradient(to right, ${leftColor} 0%, ${leftColor} 50%, ${rightColor} 50%, ${rightColor} 100%)`;
+            } catch (e) {
+                // Silently fail if CORS or canvas issues
+            }
+        };
+
+        if (img.complete && img.naturalWidth > 0) {
+            apply();
+        } else {
+            img.addEventListener('load', apply);
+        }
+    });
+}
+
+// Fetch and render all categories with ad banners in between
 async function loadCategories() {
     try {
-        const response = await fetch('/api/categories');
-        const data = await response.json();
-
-        // Backend returns { categories: [...] } where cards is a list inside category
-        // We need to map backend structure to what renderCategory expects if different
-        // Backend: { id, name, title, cards: [{ id, title, subtitle, image_url }] }
-        // Frontend render expected: category.cards (mapped from cards)
+        const [categoriesRes, adsRes] = await Promise.all([
+            fetch('/api/categories'),
+            fetch('/api/ads')
+        ]);
+        const data = await categoriesRes.json();
+        const adsData = await adsRes.json();
+        const ads = adsData.ads || [];
 
         const categories = data.categories.map(cat => ({
             id: cat.id,
-            title: cat.title || cat.name, // Use title if available
+            title: cat.title || cat.name,
             name: cat.name,
             cards: cat.cards.map(card => ({
                 id: card.id,
@@ -368,10 +419,22 @@ async function loadCategories() {
         }));
 
         const container = document.getElementById('categories-container');
-        container.innerHTML = categories.map((cat, idx) => renderCategory(cat, idx)).join('');
+        let html = '';
+        categories.forEach((cat, idx) => {
+            html += renderCategory(cat, idx);
+            // Insert an ad banner after each category (except the last one)
+            if (ads.length > 0 && idx < categories.length - 1) {
+                const ad = ads[idx % ads.length];
+                html += renderAdBanner(ad);
+            }
+        });
+        container.innerHTML = html;
 
         // Initialize animations after content is loaded
         initializeAnimations();
+
+        // Apply edge colors to ad banners
+        applyAdEdgeColors();
 
     } catch (error) {
         console.error('Error loading categories:', error);
