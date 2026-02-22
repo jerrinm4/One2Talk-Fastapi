@@ -74,7 +74,7 @@ HASH_FILE = BACKUP_DIR / '.last_backup_hash'
 DB_HOST = 'db' if RUNNING_IN_DOCKER else 'localhost'
 
 # Tables to backup (exclude admins)
-BACKUP_TABLES = ['users', 'categories', 'cards', 'votes', 'settings']
+BACKUP_TABLES = ['users', 'categories', 'cards', 'votes', 'settings', 'ads']
 
 
 def ensure_backup_dir():
@@ -163,22 +163,49 @@ def create_postgres_backup(backup_sql_path: Path):
         return False
 
 
-def calculate_backup_hash(sql_path: Path):
+def get_db_change_hash():
     """
-    Calculate a hash of the current backup state (SQL content + Uploads files).
-    Excludes SQL comments (like dump timestamps) to avoid false positives.
+    Get a hash representing the current modification state of the database tables.
+    Uses pg_stat_user_tables to sum inserts, updates, and deletes.
+    """
+    try:
+        table_list = ", ".join([f"'{t}'" for t in BACKUP_TABLES])
+        query = f"SELECT sum(n_tup_ins), sum(n_tup_upd), sum(n_tup_del) FROM pg_stat_user_tables WHERE relname IN ({table_list});"
+        
+        cmd = [
+            'psql',
+            '-h', DB_HOST,
+            '-U', POSTGRES_USER,
+            '-d', POSTGRES_DB,
+            '-t', '-c', query
+        ]
+        
+        result = run_pg_command(cmd)
+        
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            logger.error(f"Failed to get db change state: {result.stderr}")
+            return None
+    except Exception as e:
+        logger.error(f"Error getting db change state: {e}")
+        return None
+
+
+def calculate_backup_hash():
+    """
+    Calculate a hash of the current backup state without running pg_dump.
+    Combines DB modification stats + Uploads structure.
     """
     sha256 = hashlib.sha256()
     
-    # Hash SQL content (ignoring comments)
-    if sql_path.exists():
-        try:
-            with open(sql_path, 'rb') as f:
-                for line in f:
-                    if not line.strip().startswith(b'--'):
-                        sha256.update(line)
-        except Exception as e:
-            logger.error(f"Error hashing SQL file: {e}")
+    # Hash DB modifications
+    db_state = get_db_change_hash()
+    if db_state:
+        sha256.update(db_state.encode('utf-8'))
+    else:
+        logger.warning("Using fallback random hash for DB state due to stats query failure.")
+        sha256.update(str(time.time()).encode('utf-8'))
 
     # Hash uploads directory structure and modification times
     if UPLOADS_DIR.exists():
@@ -248,6 +275,12 @@ def create_zip_backup():
         tuple: (zip_path, success, skipped)
                skipped is True if no changes were detected
     """
+    # Step 1: Calculate Hash and Check for Changes BEFORE doing any heavy lifting
+    current_hash = calculate_backup_hash()
+    if not should_backup(current_hash):
+        logger.info("No changes detected since last backup. Skipping.")
+        return None, True, True
+
     timestamp = get_timestamp()
     backup_name = f"backup_{POSTGRES_DB}_{timestamp}"
     
@@ -260,16 +293,9 @@ def create_zip_backup():
     zip_path = BACKUP_DIR / zip_filename
     
     try:
-        # Step 1: Create SQL backup
+        # Step 2: Create SQL backup
         if not create_postgres_backup(sql_path):
             return None, False, False
-        
-        # Step 2: Calculate Hash and Check for Changes
-        current_hash = calculate_backup_hash(sql_path)
-        if not should_backup(current_hash):
-            logger.info("No changes detected since last backup. Skipping.")
-            sql_path.unlink() # Cleanup temp file
-            return None, True, True
         
         # Step 3: Create ZIP archive
         logger.info(f"Changes detected. Creating ZIP archive: {zip_filename}")
@@ -307,7 +333,7 @@ def create_zip_backup():
         # Clean up on failure
         if sql_path.exists():
             sql_path.unlink()
-        if zip_path.exists():
+        if 'zip_path' in locals() and zip_path.exists():
             zip_path.unlink()
         return None, False, False
 
@@ -420,6 +446,48 @@ def send_to_telegram(zip_path: Path, stats: dict = None):
         return False
 
 
+def send_status_to_telegram(stats: dict = None):
+    """
+    Send a text status message to the Telegram channel when no backup was needed.
+    """
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        logger.error("Telegram credentials not configured")
+        return False
+        
+    logger.info(f"Sending 'No Changes' status to Telegram channel: {TELEGRAM_CHAT_ID}")
+    
+    try:
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        message = f"ℹ️ *Backup Status: No Changes Detected*\n\n"
+        message += f"📅 *Date:* `{timestamp}`\n"
+                
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        data = {
+            'chat_id': TELEGRAM_CHAT_ID,
+            'text': message,
+            'parse_mode': 'Markdown'
+        }
+        
+        response = requests.post(url, data=data, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('ok'):
+                logger.info("✅ Status update sent to Telegram successfully")
+                return True
+            else:
+                logger.error(f"Telegram API error: {result.get('description')}")
+                return False
+        else:
+            logger.error(f"HTTP error: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Failed to send status to Telegram: {str(e)}")
+        return False
+
+
 def run_backup():
     """
     Execute a single backup operation.
@@ -439,6 +507,8 @@ def run_backup():
     
     if skipped:
         logger.info("Backup skipped due to no changes.")
+        stats = get_database_stats()
+        send_status_to_telegram(stats)
         return True
     
     if not success or not zip_path:
