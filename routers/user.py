@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
@@ -79,7 +79,7 @@ def get_poll_count(db: Session = Depends(get_db)):
     return {**result, "enabled": True}
 
 @router.post("/vote")
-def submit_vote(vote_data: schemas.VoteCreate, db: Session = Depends(get_db)):
+def submit_vote(request: Request, vote_data: schemas.VoteCreate, db: Session = Depends(get_db)):
     # 0. Check if voting is enabled
     voting_setting = db.query(Settings).filter(Settings.key == "voting_enabled").first()
     if voting_setting and voting_setting.value == "false":
@@ -131,10 +131,18 @@ def submit_vote(vote_data: schemas.VoteCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="You have already submitted your votes. Duplicate entries are not allowed.")
 
     # 3. Create User
+    cloudflare_data = {
+        "ip_address": request.headers.get("cf-connecting-ip"),
+        "request_id": request.headers.get("cf-ray"),
+        "country_code": request.headers.get("cf-ipcountry"),
+        "device_type": request.headers.get("cf-device-type")
+    }
+
     user = User(
         name=vote_data.user.name,
         email=vote_data.user.email,
-        phone=vote_data.user.phone
+        phone=vote_data.user.phone,
+        cloudflare_data=cloudflare_data
     )
     db.add(user)
     db.commit()
