@@ -131,11 +131,27 @@ def submit_vote(request: Request, vote_data: schemas.VoteCreate, db: Session = D
         raise HTTPException(status_code=400, detail="You have already submitted your votes. Duplicate entries are not allowed.")
 
     # 3. Create User
+    user_agent = request.headers.get("user-agent", "").lower()
+    device_type = request.headers.get("cf-device-type")
+    if not device_type:
+        if "mobi" in user_agent or "android" in user_agent or "iphone" in user_agent:
+            device_type = "Mobile"
+        elif "tablet" in user_agent or "ipad" in user_agent:
+            device_type = "Tablet"
+        elif user_agent:
+            device_type = "Desktop"
+        else:
+            device_type = "Unknown"
+
     cloudflare_data = {
         "ip_address": request.headers.get("cf-connecting-ip"),
         "request_id": request.headers.get("cf-ray"),
         "country_code": request.headers.get("cf-ipcountry"),
-        "device_type": request.headers.get("cf-device-type")
+        "region_code": request.headers.get("cf-region-code"),
+        "timezone": request.headers.get("cf-timezone"),
+        "latitude": request.headers.get("cf-iplatitude"),
+        "longitude": request.headers.get("cf-iplongitude"),
+        "device_type": device_type
     }
 
     user = User(

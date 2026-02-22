@@ -1052,6 +1052,14 @@ window.showCloudflareDetails = (encodedData) => {
                     <span class="text-slate-900 text-sm font-mono font-bold">${data.ip_address || 'N/A'}</span>
                 </div>
                 <div class="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between">
+                    <span class="text-slate-500 text-sm">Region & Timezone</span>
+                    <span class="text-slate-900 text-sm font-bold">${data.region_code || 'N/A'} - ${data.timezone || 'N/A'}</span>
+                </div>
+                <div class="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between">
+                    <span class="text-slate-500 text-sm">Coordinates</span>
+                    <span class="text-slate-900 text-sm font-bold">${data.latitude || 'N/A'}, ${data.longitude || 'N/A'}</span>
+                </div>
+                <div class="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between">
                     <span class="text-slate-500 text-sm">Device Type</span>
                     <span class="text-slate-900 text-sm font-bold">${data.device_type || 'N/A'}</span>
                 </div>
