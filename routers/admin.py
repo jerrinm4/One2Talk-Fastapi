@@ -313,7 +313,8 @@ def get_users(
         "id": u.id,
         "name": u.name,
         "email": u.email,
-        "phone": u.phone
+        "phone": u.phone,
+        "cloudflare_data": u.cloudflare_data
     } for u in users]
         
     return {
