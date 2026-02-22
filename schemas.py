@@ -103,6 +103,7 @@ class Category(CategoryBase):
 
 class User(UserBase):
     id: int
+    cloudflare_data: Optional[dict] = None
     
     model_config = ConfigDict(from_attributes=True)
 

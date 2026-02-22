@@ -983,6 +983,15 @@ async function loadUsers() {
                     <td class="px-6 py-4 font-mono text-xs text-slate-400">#${user.id}</td>
                     <td class="px-6 py-4 font-medium text-slate-900">${user.name}</td>
                     <td class="px-6 py-4 text-slate-600">${user.phone}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium text-slate-700">${user.cloudflare_data ? (user.cloudflare_data.country_code || 'N/A') : 'N/A'}</span>
+                            <button onclick="showCloudflareDetails('${encodeURIComponent(JSON.stringify(user.cloudflare_data || {}))}')" 
+                                class="text-emerald-500 hover:text-emerald-600 transition-colors" title="View Cloudflare Security Details">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            </button>
+                        </div>
+                    </td>
                     <td class="px-6 py-4 text-slate-600">${user.email}</td>
                     <td class="px-6 py-4 text-right">
                         <button onclick="deleteUser(${user.id}, '${user.name.replace(/'/g, "\\'")}')" 
@@ -1032,6 +1041,32 @@ async function deleteUser(id, name) {
         }
     } catch (err) { if (err !== 'Cancelled') console.error(err); }
 }
+
+window.showCloudflareDetails = (encodedData) => {
+    try {
+        const data = JSON.parse(decodeURIComponent(encodedData));
+        const messageHtml = `
+            <div class="text-left space-y-3 mt-4">
+                <div class="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between">
+                    <span class="text-slate-500 text-sm">IP Address</span>
+                    <span class="text-slate-900 text-sm font-mono font-bold">${data.ip_address || 'N/A'}</span>
+                </div>
+                <div class="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between">
+                    <span class="text-slate-500 text-sm">Device Type</span>
+                    <span class="text-slate-900 text-sm font-bold">${data.device_type || 'N/A'}</span>
+                </div>
+                <div class="bg-slate-50 p-2 rounded border border-slate-100 flex flex-col gap-1">
+                    <span class="text-slate-500 text-sm">Request ID (Ray ID)</span>
+                    <span class="text-slate-900 text-xs font-mono break-all">${data.request_id || 'N/A'}</span>
+                </div>
+            </div>
+        `;
+
+        showAlert(messageHtml, 'Cloudflare Security Details');
+    } catch (e) {
+        console.error("Failed to parse cloudflare data", e);
+    }
+};
 
 
 /* =========================================
