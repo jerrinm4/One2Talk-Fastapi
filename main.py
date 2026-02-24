@@ -11,7 +11,7 @@ import auth
 # Create Tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
 # Create default admin user on startup
 @app.on_event("startup")
@@ -92,6 +92,21 @@ async def read_terms():
 @app.get("/privacy")
 async def read_privacy():
     return FileResponse('privacy.html')
+
+# Serve robots.txt
+@app.get("/robots.txt")
+async def read_robots():
+    return FileResponse('robots.txt', media_type='text/plain')
+
+# Serve sitemap.xml
+@app.get("/sitemap.xml")
+async def read_sitemap():
+    return FileResponse('sitemap.xml', media_type='application/xml')
+
+# Serve llm.txt
+@app.get("/llm.txt")
+async def read_llm():
+    return FileResponse('llm.txt', media_type='text/plain')
 
 # Serve Admin Dashboard
 @app.get("/admin", response_class=HTMLResponse)

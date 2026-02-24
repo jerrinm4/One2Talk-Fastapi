@@ -1,0 +1,10 @@
+# Robots.txt for one2talk.com
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /static/admin/
+
+# Sitemap
+Sitemap: https://one2talk.com/sitemap.xml
