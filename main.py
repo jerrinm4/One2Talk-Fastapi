@@ -108,6 +108,28 @@ async def read_sitemap():
 async def read_llm():
     return FileResponse('llm.txt', media_type='text/plain')
 
+# Serve Favicons and related root files
+root_files = [
+    "favicon.ico", "favicon.svg", "browserconfig.xml",
+    "favicon-16x16.png", "favicon-32x32.png", "favicon-57x57.png",
+    "favicon-60x60.png", "favicon-70x70.png", "favicon-72x72.png",
+    "favicon-76x76.png", "favicon-96x96.png", "favicon-114x114.png",
+    "favicon-120x120.png", "favicon-144x144.png", "favicon-150x150.png",
+    "favicon-152x152.png", "favicon-180x180.png", "favicon-192x192.png",
+    "favicon-310x310.png"
+]
+for fname in root_files:
+    if os.path.exists(fname):
+        def _create_route(filename):
+            @app.get(f"/{filename}")
+            async def _serve_file():
+                media_type = "image/png" if filename.endswith(".png") else \
+                             "image/svg+xml" if filename.endswith(".svg") else \
+                             "image/x-icon" if filename.endswith(".ico") else \
+                             "application/xml" if filename.endswith(".xml") else None
+                return FileResponse(filename, media_type=media_type)
+        _create_route(fname)
+
 # Serve Admin Dashboard
 @app.get("/admin", response_class=HTMLResponse)
 async def read_admin_dashboard(request: Request):
