@@ -1805,4 +1805,7 @@ footer .footer-wrapper .contact-info .contact-item svg path {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 8px;
     }
+    .container {
+        padding: 0 12px;
+    }
 }
