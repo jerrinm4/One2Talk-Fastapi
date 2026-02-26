@@ -2,10 +2,9 @@
 
 User-agent: *
 Allow: /
-Allow: /api/categories/
 Disallow: /admin/
 Disallow: /static/admin/
-Disallow: /api/
+Disallow: /api/admin/
 
 # Sitemap
 Sitemap: https://one2talks.com/sitemap.xml
