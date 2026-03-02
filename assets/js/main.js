@@ -311,12 +311,15 @@ function renderCategory(category, index) {
         return `
             <div class="pool-card" 
                  data-aos="fade-up" 
-                 data-aos-duration="800" 
+                 data-aos-duration="600" 
                  data-aos-delay="${cardIndex * 100}"
                  data-card-id="${card.id}"
                  onclick="handleCardVote(this, '${category.id}', '${card.id}')"
                  style="cursor: pointer;">
-                <img src="${card.image_url}" alt="${card.title}">
+                <img src="/cdn-cgi/image/format=auto,quality=80,width=400/${card.image_url}" 
+                     alt="${card.title}"
+                     onerror="this.onerror=null;this.src='${card.image_url}';"
+                     loading="lazy">
                 <div class="pool-card-text">
                     <h4 class="pool-card-title">
                         ${card.title}
