@@ -311,7 +311,7 @@ function renderCategory(category, index) {
         return `
             <div class="pool-card" 
                  data-aos="fade-up" 
-                 data-aos-duration="600" 
+                 data-aos-duration="700" 
                  data-aos-delay="${cardIndex * 100}"
                  data-card-id="${card.id}"
                  onclick="handleCardVote(this, '${category.id}', '${card.id}')"
